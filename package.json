@@ -1,0 +1,22 @@
+{
+  "name": "enapoint",
+  "private": true,
+  "type": "module",
+  "description": "ENA Point \u2014 energy hardware and software: metering, solar, storage, EV charging, mini-grids.",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "test": "NETLIFY_DB_URL=\"postgresql://u:p@db.invalid.tld/ena\" node --experimental-strip-types --no-warnings --import ./tools/register-resolver.mjs tools/test-libs.mts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0",
+    "@netlify/database": "^2.0.1",
+    "drizzle-orm": "^1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.0",
+    "@types/node": "^26.6.2",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "typescript": "^7.0.2"
+  }
+}

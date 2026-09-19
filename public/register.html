@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register a smart meter — Enapoint</title>
+<meta name="description" content="Link your meter to ENA by IMEI or RFID and the grid knows where to send credit. Three steps, about two minutes, no visit to a vending office.">
+<meta property="og:title" content="Register a smart meter — Enapoint">
+<meta property="og:description" content="Link your meter to ENA by IMEI or RFID and the grid knows where to send credit. Three steps, about two minutes, no visit to a vending office.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.enapoint.com/register">
+<meta property="og:image" content="https://www.enapoint.com/assets/img/brand/ena-lockup.png">
+<link rel="canonical" href="https://www.enapoint.com/register">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/ena.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+
+  <header class="site-header">
+    <div class="header-top">
+      <a class="brand" href="/" aria-label="Enapoint home">
+        <img src="/assets/img/brand/ena-mark-sm.webp" alt="" width="34" height="35">
+        <span>ENAPOINT</span>
+      </a>
+      <div class="header-actions">
+        <a class="pill" href="/dashboard">Console</a>
+        <button class="icon-btn" data-theme-toggle type="button" aria-label="Switch theme">&#9728;</button>
+        <a class="cta" href="/contact">Request a quote</a>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/products">Products</a>
+        <a href="/panels">Solar</a>
+        <a href="/cells">Storage</a>
+        <a href="/ev">EV charging</a>
+        <a href="/meter">Metering</a>
+        <a href="/grid">Mini-grids</a>
+        <a href="/pops">POPS</a>
+        <a href="/lab">Manufacturing</a>
+        <a href="/refi">Impact</a>
+        <a href="/app">ENA Control</a>
+        <a href="/about">About</a>
+        <a href="/support">Support</a>
+        <a href="/contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="section">
+      <div class="wrap">
+        <p class="eyebrow">Smart meter registration</p>
+        <h1>Register once. Buy power from anywhere, forever.</h1>
+        <p class="lede">Link your meter to ENA by IMEI or RFID and the grid knows where to send credit. Three steps, about two minutes, no visit to a vending office.</p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="wrap">
+        <div data-register>
+          <div class="stepper" data-stepper><i></i><i></i><i></i></div>
+
+          <div data-step="1">
+            <div class="split">
+              <div>
+                <h2>How would you like to identify the meter?</h2>
+                <p class="small">The IMEI is printed on the meter body. The RFID is on the card issued with it. Either one finds the device.</p>
+                <form data-verify-form class="card raised" style="margin-top:20px">
+                  <div class="field">
+                    <label>Identify by</label>
+                    <div class="flex">
+                      <button class="chip" type="button" data-mode="imei" aria-pressed="true">IMEI</button>
+                      <button class="chip" type="button" data-mode="rfid" aria-pressed="false">RFID</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="r-id" data-identifier-label>IMEI number</label>
+                    <input id="r-id" name="identifier" required placeholder="356938035643809" autocomplete="off">
+                  </div>
+                  <button class="btn" type="submit" style="width:100%">Verify device</button>
+                  <div class="msg" data-msg hidden></div>
+                  <p class="note">&#8981; Scan with your camera instead</p>
+                </form>
+              </div>
+              <div class="card">
+        <p class="eyebrow">Why register</p>
+                <div style="margin-top:6px"><div class="spec-row"><span class="k">Buy from anywhere</span><span class="v">Web or app, no vending office</span></div><div class="spec-row"><span class="k">Credit goes to the device</span><span class="v">Not to a paper token you can lose</span></div><div class="spec-row"><span class="k">Offline is handled</span><span class="v">Purchases queue for fourteen days</span></div><div class="spec-row"><span class="k">Auto top-up</span><span class="v">Set a kWh floor and forget it</span></div><div class="spec-row"><span class="k">One account</span><span class="v">Meters, roof, battery and chargers together</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div data-step="2" hidden>
+            <div class="split">
+              <div>
+                <div class="badge"><span class="dot"></span>Device found on the grid</div>
+                <h2 style="margin-top:18px">Confirm the premises</h2>
+                <div class="card" data-confirm style="margin-bottom:20px"></div>
+                <form data-link-form class="card raised">
+                  <input type="hidden" name="meterNumber">
+                  <input type="hidden" name="disco">
+                  <input type="hidden" name="tariffBand">
+                  <input type="hidden" name="tariffKoboPerKwh">
+                  <div class="field"><label for="r-holder">Account holder</label><input id="r-holder" name="holderName" required placeholder="A. Okonkwo"></div>
+                  <div class="field"><label for="r-addr">Address</label><input id="r-addr" name="address" placeholder="12B Gado Nasko Way, Apo, Abuja"></div>
+                  <div class="field-row">
+                    <div class="field"><label for="r-phone">Phone for alerts</label><input id="r-phone" name="phone" placeholder="0803 000 0000"></div>
+                    <div class="field"><label for="r-floor">Auto top-up floor (kWh)</label><input id="r-floor" name="autoTopupFloorKwh" type="number" min="0" value="20"></div>
+                  </div>
+                  <div class="flex">
+                    <button class="btn ghost" type="button" data-back="1">Back</button>
+                    <button class="btn" type="submit">Link to my account</button>
+                  </div>
+                  <div class="msg" data-msg hidden></div>
+                </form>
+              </div>
+              <div class="card">
+                <h3>What linking does</h3>
+                <p class="small">It binds the device to your Enapoint account so credit can be pushed to it directly. It does not change your network operator, your tariff or any existing balance — those stay where they are.</p>
+              </div>
+            </div>
+          </div>
+
+          <div data-step="3" hidden>
+            <div class="split">
+              <div>
+                <div class="badge"><span class="dot"></span>Meter linked &middot; grid monitoring on</div>
+                <h2 style="margin-top:18px">Load the first units</h2>
+                <p class="small">Linked meter: <b data-linked-summary class="mono"></b></p>
+                <form class="card raised" data-topup style="margin-top:18px">
+                  <input type="hidden" name="meterNumber">
+                  <div class="field-row">
+                    <div class="field"><label for="r-email">Email for the receipt</label><input id="r-email" name="email" type="email" required></div>
+                    <div class="field"><label for="r-phone2">Phone</label><input id="r-phone2" name="phone"></div>
+                  </div>
+                  <div class="field">
+                    <label for="r-amount">Amount (&#8358;)</label>
+                    <input id="r-amount" name="amount" type="number" min="100" step="50" value="5000" required>
+                    <div class="flex" style="margin-top:10px">
+                      <button class="chip" type="button" data-amount-chip="1000">&#8358;1,000</button>
+                      <button class="chip" type="button" data-amount-chip="2000">&#8358;2,000</button>
+                      <button class="chip on" type="button" data-amount-chip="5000">&#8358;5,000</button>
+                      <button class="chip" type="button" data-amount-chip="10000">&#8358;10,000</button>
+                    </div>
+                  </div>
+                  <div data-quote style="margin:18px 0"></div>
+                  <div class="flex">
+                    <button class="btn ghost" type="button" data-back="2">Back</button>
+                    <button class="btn" type="submit">Continue to payment</button>
+                  </div>
+                  <div class="msg" data-msg hidden></div>
+                  <p class="note">Credit queues and lands automatically if the meter is offline</p>
+                </form>
+              </div>
+              <div class="card">
+                <h3>You can skip this</h3>
+                <p class="small">The meter is already linked. Buying units now is convenience, not a requirement — you can top up any time from the web or the app.</p>
+                <a class="pill" href="/meter#topup">Top up later &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="wrap">
+        <div class="card">
+          <div class="between">
+            <div><h3 class="mb0">No smart meter yet?</h3><p class="small mb0">ENA supplies and installs single- and three-phase prepaid meters for mini-grids, estates and captive sites, and can register an existing device you already have.</p></div>
+            <a class="cta" href="/meter">See the meters</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="/" style="margin-bottom:12px" aria-label="Enapoint home">
+            <img src="/assets/img/brand/ena-mark-sm.webp" alt="" width="34" height="35">
+            <span>ENAPOINT</span>
+          </a>
+          <p class="small">Decentralised energy &mdash; solar, storage, power conversion and the software that reports on all three. Abuja, Nigeria &middot; Quincy, Massachusetts.</p>
+          <p class="tiny">Hosted on Netlify &middot; DNS by Hostinger</p>
+        </div>
+        <div>
+          <h4>Products</h4>
+          <ul><li><a href="/panels">ENA Solar Panels</a></li><li><a href="/panels#slates">ENA Slates</a></li><li><a href="/cells">ENA Powerwall</a></li><li><a href="/cells#lit">ENA LIT LI</a></li><li><a href="/pops">POPS</a></li><li><a href="/ev">EV charging</a></li></ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul><li><a href="/about">About Enapoint</a></li><li><a href="/lab">Manufacturing</a></li><li><a href="/refi">Sustainability &amp; impact</a></li><li><a href="/contact">Contact</a></li></ul>
+        </div>
+        <div>
+          <h4>Developers</h4>
+          <ul><li><a href="/dashboard#apis">API reference</a></li><li><a href="/dashboard#keys">API keys</a></li><li><a href="/dashboard">Console</a></li><li><a href="/support">System status</a></li></ul>
+        </div>
+        <div>
+          <h4>Account</h4>
+          <ul><li><a href="/register">Register a meter</a></li><li><a href="/meter#topup">Buy units</a></li><li><a href="/app">Get ENA Control</a></li><li><a href="/support">Support</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-base">
+        <span>&copy; 2026 Ena Plus Ltd, trading as Enapoint</span>
+        <span class="flex"><a href="/support">Privacy</a><a href="/support">Terms</a><a href="/support">NDPR</a></span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+<script src="/assets/js/ena.js"></script>
+
+</body>
+</html>
