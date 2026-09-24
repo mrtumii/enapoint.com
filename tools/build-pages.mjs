@@ -31,7 +31,7 @@ const FOOTER = [
   ["Account", [["/register", "Register a meter"], ["/meter#topup", "Buy units"], ["/app", "Get ENA Control"], ["/support", "Support"]]],
 ];
 
-const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s) => String(s).replace(/&(?!(?:amp|lt|gt|quot|apos|nbsp|ndash|mdash|middot|copy|rarr);)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 function layout({ slug, title, description, body, script = "" }) {
   const path = slug === "index" ? "/" : `/${slug}`;
@@ -66,7 +66,7 @@ function layout({ slug, title, description, body, script = "" }) {
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/ena.css">
 </head>
 <body>
@@ -103,7 +103,6 @@ ${body}
             <span>ENAPOINT</span>
           </a>
           <p class="small">Decentralised energy &mdash; solar, storage, power conversion and the software that reports on all three. Abuja, Nigeria &middot; Quincy, Massachusetts.</p>
-          <p class="tiny">Hosted on Netlify &middot; DNS by Hostinger</p>
         </div>
         ${footer}
       </div>
@@ -333,8 +332,13 @@ page({
   body: [
     section(
       `${eyebrow("Solar generation")}
-        <h1>Modules for the array, and an envelope that is the array</h1>
+        <h1>Solar panels built for real roofs, fields and façades</h1>
         <p class="lede">ENA supplies conventional framed modules where a roof or a field is the right place for them &mdash; and building-integrated products where the roof, the façade or the spandrel should be generating instead of just enclosing.</p>`,
+    ),
+    section(
+      `        <div class="between"><div>${eyebrow("Solar range")}<h2>Choose a solar product</h2></div><p class="small">Current range, availability and project pricing</p></div>
+        <div class="grid g3" data-products="solar" style="margin-top:24px"><p class="small">Loading solar products&hellip;</p></div>`,
+      'id="shop-solar"',
     ),
     section(
       `        <div class="split">
@@ -420,8 +424,13 @@ page({
   body: [
     section(
       `${eyebrow("Storage & power conversion")}
-        <h1>The half of the system that works after sunset</h1>
+        <h1>Battery storage that keeps working after sunset</h1>
         <p class="lede">Lithium storage from a single 5 kWh wall unit to industrial cabinet blocks, and the hybrid inverters and charge controllers that tie generation, storage, grid and load together.</p>`,
+    ),
+    section(
+      `        <div class="between"><div>${eyebrow("Battery range")}<h2>Choose a storage system</h2></div><p class="small">Current range, availability and configuration pricing</p></div>
+        <div class="grid g3" data-products="storage" style="margin-top:24px"><p class="small">Loading battery products&hellip;</p></div>`,
+      'id="shop-storage"',
     ),
     section(
       `        <div class="split">
@@ -463,7 +472,7 @@ ${eyebrow("ENA LIT LI · wall-mounted")}
           <div>
 ${eyebrow("Hybrid inverters & MPPT")}
             <h2>1 kVA to 50 kVA and above</h2>
-            <p>Hybrid inverters that take PV, battery, grid and generator inputs and decide between them &mdash; sized from a single-room backup up to industrial three-phase duty &mdash; with MPPT charge controllers matched to the array rather than bought separately and hoped about.</p>
+            <p>Hybrid inverters accept PV, battery, grid and generator inputs and select the right source. The range runs from single-room backup to industrial three-phase duty, with MPPT charge controllers matched to each array instead of added as an afterthought.</p>
             <div class="flex" style="margin-top:20px"><a class="cta" href="/contact">Size a system</a><a class="pill" href="/grid">Mini-grid control &rarr;</a></div>
           </div>
           <div class="card">${specs([

@@ -122,14 +122,15 @@
       return '<div class="spec-row"><span class="k">' + escapeHtml(s.k) + '</span><span class="v">' + escapeHtml(s.v) + "</span></div>";
     }).join("");
     return (
-      '<article class="card">' +
+      '<article class="card product-card">' +
       '<div class="between"><span class="tag">' + escapeHtml(p.category) + "</span>" +
       (p.status !== "available" ? '<span class="tag warn">' + escapeHtml(p.status) + "</span>" : "") +
       "</div>" +
       "<h3 style=\"margin-top:14px\">" + escapeHtml(p.name) + "</h3>" +
-      '<p class="small">' + escapeHtml(p.tagline) + "</p>" +
+      '<p class="small product-summary">' + escapeHtml(p.tagline) + "</p>" +
       '<div style="margin:14px 0">' + specs + "</div>" +
-      '<div class="between"><b>' + price + '</b><span class="small">' + escapeHtml(p.priceNote) + "</span></div>" +
+      '<div class="between"><b class="product-price">' + price + '</b><span class="small">' + escapeHtml(p.priceNote) + "</span></div>" +
+      '<div class="product-actions"><span class="tiny">Sales support included</span><a class="cta" href="/contact?product=' + encodeURIComponent(p.name) + '">Request a quote</a></div>' +
       "</article>"
     );
   }
@@ -146,6 +147,19 @@
       .catch(function () {
         host.innerHTML = '<p class="small">The catalogue could not be loaded. The pricing below is indicative.</p>';
       });
+  }
+
+  function initSalesEnquiry() {
+    var form = document.querySelector('[data-api-form="/api/contact"]');
+    if (!form) return;
+    var product = new URLSearchParams(window.location.search).get("product");
+    if (!product) return;
+    var topic = form.querySelector('[name="topic"]');
+    var message = form.querySelector('[name="message"]');
+    if (topic) topic.value = "sales";
+    if (message && !message.value) message.value = "I would like pricing and availability for " + product + ".";
+    var heading = form.closest("div").querySelector("h2");
+    if (heading) heading.textContent = "Request a quote for " + product;
   }
 
   function initUpdates() {
@@ -500,6 +514,7 @@
     initTheme();
     initStatus();
     initProducts();
+    initSalesEnquiry();
     initUpdates();
     initTopup();
     initApiForms();
