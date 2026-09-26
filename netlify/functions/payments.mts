@@ -42,7 +42,8 @@ export default handler(async (req, ctx) => {
     const body = await readJson(req);
     requireFields(body, ["email"]);
     const amountKobo = amountFrom(body);
-    const meterNumber = body.meterNumber ? String(body.meterNumber).trim() : "";
+    // Stored digits-only, the same way meters.mts keys the meters table.
+    const meterNumber = body.meterNumber ? String(body.meterNumber).replace(/[\s-]/g, "") : "";
     const priced = await quote(amountKobo, meterNumber || undefined);
     const reference = newReference();
     const origin = new URL(req.url).origin;
@@ -153,5 +154,11 @@ export const config: Config = {
     "/api/payments/simulate",
     "/api/payments/verify",
     "/api/payments/verify/:reference",
+    "/api/v1/payments",
+    "/api/v1/payments/quote",
+    "/api/v1/payments/initialize",
+    "/api/v1/payments/simulate",
+    "/api/v1/payments/verify",
+    "/api/v1/payments/verify/:reference",
   ],
 };

@@ -59,4 +59,4 @@ export default handler(async (req) => {
   return ok({ received: true, id: row.id, reply: "We reply within one working day." }, 201);
 });
 
-export const config: Config = { path: ["/api/contact", "/api/grid-requests"] };
+export const config: Config = { path: ["/api/contact", "/api/grid-requests", "/api/v1/contact", "/api/v1/grid-requests"] };

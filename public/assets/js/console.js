@@ -14,7 +14,7 @@
   var app = document.querySelector("[data-app]");
   if (!gate || !app) return;
 
-  var PANELS = ["overview", "products", "updates", "stock", "devices", "apis", "keys"];
+  var PANELS = ["overview", "meters", "enquiries", "products", "updates", "stock", "devices", "apis", "keys"];
   var cache = {};
 
   /* --------------------------------------------------------------- session */
@@ -80,6 +80,8 @@
     if (cache[name] && !force) return;
     cache[name] = true;
     if (name === "overview") loadOverview();
+    if (name === "meters") loadMeters();
+    if (name === "enquiries") loadEnquiries();
     if (name === "products") loadProducts();
     if (name === "updates") loadUpdates();
     if (name === "stock") loadStock();
@@ -450,6 +452,72 @@
       .catch(function (err) { oops("[data-device-list]", err); });
   }
 
+  /* ---------------------------------------------------------- meter signups */
+
+  var meterFilter = document.querySelector("[data-meter-filter]");
+  if (meterFilter) meterFilter.addEventListener("change", function () { load("meters", true); });
+
+  function loadMeters() {
+    busy("[data-meter-list]");
+    var status = meterFilter ? meterFilter.value : "";
+    api("/api/meters" + (status ? "?status=" + encodeURIComponent(status) : ""))
+      .then(function (d) {
+        var host = document.querySelector("[data-meter-list]");
+        host.innerHTML = d.meters.length
+          ? d.meters.map(function (m) {
+              var tone = m.status === "verified" || m.status === "linked" ? "ok" : m.status === "pending-verification" ? "warn" : "bad";
+              var actions = m.status === "pending-verification"
+                ? '<button class="btn tiny-btn" data-meter-set="verified" data-meter="' + esc(m.meterNumber) + '">Verify</button> ' +
+                  '<button class="btn ghost tiny-btn" data-meter-set="rejected" data-meter="' + esc(m.meterNumber) + '">Reject</button>'
+                : "";
+              return (
+                '<tr><td class="mono">' + esc(m.meterNumber) + "</td><td><b>" + esc(m.holderName) + '</b><br><span class="small">' +
+                esc(m.email) + " · " + esc(m.phone) + "</span></td><td>" + esc(m.disco) + " · Band " + esc(m.tariffBand) +
+                '<br><span class="small">' + esc(m.meterType) + "</span></td><td>" + esc(m.address) +
+                (m.state ? '<br><span class="small">' + esc(m.state) + "</span>" : "") + "</td><td>" + esc(m.source) +
+                '</td><td><span class="tag ' + tone + '">' + esc(m.status) + "</span></td><td>" + when(m.registeredAt) +
+                "</td><td>" + actions + "</td></tr>"
+              );
+            }).join("")
+          : '<tr><td colspan="8" class="small">No meters match this filter.</td></tr>';
+        host.querySelectorAll("[data-meter-set]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            button.disabled = true;
+            api("/api/meters/" + encodeURIComponent(button.getAttribute("data-meter")), {
+              method: "PATCH",
+              body: { status: button.getAttribute("data-meter-set") },
+            })
+              .then(function () { load("meters", true); })
+              .catch(function (err) { button.disabled = false; window.alert(err.message); });
+          });
+        });
+      })
+      .catch(function (err) { oops("[data-meter-list]", err); });
+  }
+
+  /* -------------------------------------------------------------- enquiries */
+
+  function loadEnquiries() {
+    busy("[data-enquiry-list]");
+    Promise.all([api("/api/contact"), api("/api/grid-requests")])
+      .then(function (r) {
+        var rows = r[0].messages.map(function (m) {
+          return { at: m.createdAt, topic: m.topic, who: m.name + (m.company ? " · " + m.company : ""), contact: m.email + (m.phone ? " · " + m.phone : ""), body: m.message };
+        }).concat(r[1].requests.map(function (g) {
+          return { at: g.createdAt, topic: "mini-grid", who: g.contactName, contact: g.contactEmail, body: g.peakLoadKw + " kW · " + g.sector + (g.location ? " · " + g.location : "") + (g.notes ? " — " + g.notes : "") };
+        })).sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+        document.querySelector("[data-enquiry-list]").innerHTML = rows.length
+          ? rows.map(function (e) {
+              return (
+                "<tr><td>" + when(e.at) + '</td><td><span class="tag">' + esc(e.topic) + "</span></td><td><b>" + esc(e.who) +
+                '</b><br><span class="small">' + esc(e.contact) + "</span></td><td>" + esc(e.body) + "</td></tr>"
+              );
+            }).join("")
+          : '<tr><td colspan="4" class="small">No enquiries yet.</td></tr>';
+      })
+      .catch(function (err) { oops("[data-enquiry-list]", err); });
+  }
+
   /* ------------------------------------------------------------------- keys */
 
   function loadKeys() {
@@ -519,8 +587,10 @@
       ["POST", "/api/payments/initialize", "Start a payment", "public"],
       ["GET", "/api/payments/verify/:reference", "Verify and settle", "public"],
       ["POST", "/api/payments/webhook", "Provider callback", "signed"],
-      ["POST", "/api/meters/verify", "Find a meter on the grid", "public"],
-      ["POST", "/api/meters/register", "Link a meter to an account", "public"],
+      ["POST", "/api/meters/verify", "Check whether a meter is registered", "public"],
+      ["POST", "/api/meters/register", "Register a meter (verified with a write key)", "public / write"],
+      ["GET", "/api/meters", "List registered meters", "read"],
+      ["PATCH", "/api/meters/:number", "Verify, reject or update a meter", "write"],
       ["GET", "/api/vend", "Vending log", "read"],
       ["POST", "/api/vend/flush", "Deliver queued units", "write"],
       ["GET", "/api/devices", "Connected devices", "read"],

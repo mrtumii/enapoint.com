@@ -39,4 +39,4 @@ export default handler(async (req) => {
   return methodNotAllowed(["GET", "POST"]);
 });
 
-export const config: Config = { path: "/api/devices" };
+export const config: Config = { path: ["/api/devices", "/api/v1/devices"] };

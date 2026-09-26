@@ -32,7 +32,27 @@
     });
   }
 
+  /* ------------------------------------------------------------ mobile menu */
+
+  function initNav() {
+    var header = document.querySelector(".site-header");
+    var toggle = document.querySelector("[data-nav-toggle]");
+    if (!header || !toggle) return;
+    function set(open) {
+      header.classList.toggle("nav-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    }
+    toggle.addEventListener("click", function () { set(!header.classList.contains("nav-open")); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") set(false); });
+    header.querySelectorAll(".site-nav a").forEach(function (a) { a.addEventListener("click", function () { set(false); }); });
+  }
+
   /* --------------------------------------------------------------------- api */
+
+  // Visitors never see raw server or network failures; 4xx messages are written
+  // for people and are shown as they are.
+  var FRIENDLY_ERROR = "We couldn't complete that just now. Please try again in a moment, or email info@enapoint.com.";
 
   async function api(path, options) {
     options = options || {};
@@ -42,11 +62,19 @@
       init.body = JSON.stringify(options.body);
     }
     if (options.raw) { init.body = options.raw; delete init.headers["content-type"]; }
-    var res = await fetch(path, init);
+    var res;
+    try {
+      res = await fetch(path, init);
+    } catch (e) {
+      var offline = new Error("You appear to be offline. Check your connection and try again.");
+      offline.status = 0;
+      throw offline;
+    }
     var data = null;
     try { data = await res.json(); } catch (e) { data = {}; }
     if (!res.ok) {
-      var err = new Error(data && data.error ? data.error : "Request failed (" + res.status + ")");
+      var readable = res.status < 500 && data && data.error;
+      var err = new Error(readable ? data.error : FRIENDLY_ERROR);
       err.status = res.status;
       err.data = data;
       throw err;
@@ -77,6 +105,34 @@
     return String(value === null || value === undefined ? "" : value).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
+  }
+
+  /**
+   * Posts a form to Netlify Forms, which emails each submission to the inbox set
+   * for that form (enquiries → info@, registrations → signup@). Resolves true/false,
+   * never throws, so it can run alongside the database write.
+   */
+  function sendToInbox(form, extra) {
+    if (!form || !form.getAttribute("name")) return Promise.resolve(false);
+    var data = new FormData(form);
+    Object.keys(extra || {}).forEach(function (k) { data.set(k, extra[k]); });
+    return fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(data).toString(),
+    })
+      .then(function (res) { return res.ok; })
+      .catch(function () { return false; });
+  }
+
+  function jsonFromForm(form) {
+    var body = {};
+    new FormData(form).forEach(function (value, key) {
+      if (key === "form-name" || key === "bot-field" || key === "subject") return;
+      var field = form.querySelector('[name="' + key + '"]');
+      body[key] = field && field.dataset.number !== undefined ? Number(value) : value;
+    });
+    return body;
   }
 
   function setMessage(el, text, kind) {
@@ -145,16 +201,22 @@
         host.innerHTML = data.products.map(productCard).join("");
       })
       .catch(function () {
-        host.innerHTML = '<p class="small">The catalogue could not be loaded. The pricing below is indicative.</p>';
+        host.innerHTML = '<div class="card"><h3>Pricing on request</h3><p class="small">Our sales team will send current pricing and availability.</p><a class="cta" href="/contact?topic=sales">Request a quote</a></div>';
       });
   }
 
   function initSalesEnquiry() {
     var form = document.querySelector('[data-api-form="/api/contact"]');
     if (!form) return;
-    var product = new URLSearchParams(window.location.search).get("product");
+    var params = new URLSearchParams(window.location.search);
+    var product = params.get("product");
+    var wanted = params.get("topic");
+    var topicSelect = form.querySelector('[name="topic"]');
+    if (wanted && topicSelect && topicSelect.querySelector('option[value="' + wanted.replace(/[^a-z-]/g, "") + '"]')) {
+      topicSelect.value = wanted;
+    }
     if (!product) return;
-    var topic = form.querySelector('[name="topic"]');
+    var topic = topicSelect;
     var message = form.querySelector('[name="message"]');
     if (topic) topic.value = "sales";
     if (message && !message.value) message.value = "I would like pricing and availability for " + product + ".";
@@ -181,7 +243,7 @@
           })
           .join("");
       })
-      .catch(function () { host.innerHTML = '<p class="small">Updates could not be loaded.</p>'; });
+      .catch(function () { host.innerHTML = '<p class="small">No product updates right now.</p>'; });
   }
 
   /* ------------------------------------------------------------ top-up form */
@@ -264,22 +326,28 @@
       var msg = form.querySelector("[data-msg]");
       form.addEventListener("submit", function (event) {
         event.preventDefault();
+        if (!form.reportValidity()) return;
         var button = form.querySelector('[type="submit"]');
-        var raw = Object.fromEntries(new FormData(form).entries());
-        var body = {};
-        Object.keys(raw).forEach(function (key) {
-          var numeric = form.querySelector('[name="' + key + '"]');
-          body[key] = numeric && numeric.dataset.number !== undefined ? Number(raw[key]) : raw[key];
-        });
         button.disabled = true;
         setMessage(msg, "Sending…", "");
-        api(endpoint, { method: "POST", body: body })
-          .then(function (result) {
-            setMessage(msg, result.reply || "Received. Thank you.", "good");
+        // The database keeps the record; the inbox copy is what the team reads. A
+        // message counts as delivered when either one accepts it.
+        var saved = api(endpoint, { method: "POST", body: jsonFromForm(form) });
+        var mailed = sendToInbox(form);
+        Promise.allSettled([saved, mailed]).then(function (r) {
+          var dbOk = r[0].status === "fulfilled";
+          var mailOk = r[1].status === "fulfilled" && r[1].value === true;
+          var clientError = !dbOk && r[0].reason && r[0].reason.status >= 400 && r[0].reason.status < 500;
+          if (clientError) {
+            setMessage(msg, r[0].reason.message, "bad");
+          } else if (dbOk || mailOk) {
+            setMessage(msg, (dbOk && r[0].value.reply) || "Thank you — your message has been sent. We reply within one working day.", "good");
             form.reset();
-          })
-          .catch(function (err) { setMessage(msg, err.message, "bad"); })
-          .finally(function () { button.disabled = false; });
+          } else {
+            setMessage(msg, r[0].reason ? r[0].reason.message : FRIENDLY_ERROR, "bad");
+          }
+          button.disabled = false;
+        });
       });
     });
   }
@@ -326,115 +394,69 @@
     render();
   }
 
-  /* --------------------------------------------- meter registration wizard */
+  /* ------------------------------------------------------ meter registration */
 
   function initRegister() {
-    var root = document.querySelector("[data-register]");
-    if (!root) return;
-    var state = { step: 1, device: null, meter: null };
+    var form = document.querySelector("[data-register-form]");
+    if (!form) return;
+    var msg = form.querySelector("[data-msg]");
+    var done = document.querySelector("[data-register-done]");
 
-    function show(step) {
-      state.step = step;
-      root.querySelectorAll("[data-step]").forEach(function (el) {
-        el.hidden = Number(el.getAttribute("data-step")) !== step;
-      });
-      root.querySelectorAll("[data-stepper] i").forEach(function (bar, idx) {
-        bar.classList.toggle("done", idx < step);
-      });
-      window.scrollTo({ top: root.offsetTop - 120, behavior: "smooth" });
+    function invalid(field, text) {
+      field.setAttribute("aria-invalid", "true");
+      field.focus();
+      setMessage(msg, text, "bad");
+      return false;
     }
 
-    root.querySelectorAll("[data-mode]").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        root.querySelectorAll("[data-mode]").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
-        chip.setAttribute("aria-pressed", "true");
-        var label = root.querySelector("[data-identifier-label]");
-        if (label) label.textContent = chip.getAttribute("data-mode") === "rfid" ? "RFID number" : "IMEI number";
-      });
-    });
-
-    var verifyForm = root.querySelector("[data-verify-form]");
-    verifyForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-      var msg = verifyForm.querySelector("[data-msg]");
-      var identifier = verifyForm.querySelector('[name="identifier"]').value.trim();
-      var mode = (root.querySelector('[data-mode][aria-pressed="true"]') || {}).getAttribute
-        ? root.querySelector('[data-mode][aria-pressed="true"]').getAttribute("data-mode")
-        : "imei";
-      setMessage(msg, "Checking the grid…", "");
-      var body = {};
-      body[mode] = identifier;
-      api("/api/meters/verify", { method: "POST", body: body })
-        .then(function (result) {
-          if (result.alreadyLinked) {
-            state.meter = result.meter;
-            setMessage(msg, "That meter is already linked to an account.", "good");
-            fillConfirm(result.meter);
-            show(2);
-            return;
-          }
-          state.device = Object.assign({}, result.device);
-          state.device[mode] = identifier;
-          setMessage(msg, "", "");
-          fillConfirm(result.device);
-          show(2);
-        })
-        .catch(function (err) { setMessage(msg, err.message, "bad"); });
-    });
-
-    function fillConfirm(device) {
-      var box = root.querySelector("[data-confirm]");
-      box.innerHTML =
-        '<div class="spec-row"><span class="k">Meter number</span><span class="v mono">' + escapeHtml(device.meterNumber) + "</span></div>" +
-        '<div class="spec-row"><span class="k">Network</span><span class="v">' + escapeHtml(device.disco) + "</span></div>" +
-        '<div class="spec-row"><span class="k">Tariff band</span><span class="v">' + escapeHtml(device.tariffBand) + " · " + naira(device.tariffKoboPerKwh) + "/kWh</span></div>";
-      root.querySelector('[name="meterNumber"]').value = device.meterNumber;
-      root.querySelector('[name="disco"]').value = device.disco || "";
-      root.querySelector('[name="tariffBand"]').value = device.tariffBand || "C";
-      root.querySelector('[name="tariffKoboPerKwh"]').value = device.tariffKoboPerKwh || 28500;
+    function check() {
+      form.querySelectorAll("[aria-invalid]").forEach(function (f) { f.removeAttribute("aria-invalid"); });
+      var fields = form.querySelectorAll("[required]");
+      for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        if (f.type === "checkbox" ? !f.checked : !String(f.value).trim()) {
+          var label = form.querySelector('label[for="' + f.id + '"]');
+          return invalid(f, f.type === "checkbox" ? "Please confirm the details and consent to continue." : "Please fill in " + (label ? label.textContent.toLowerCase() : "all required fields") + ".");
+        }
+      }
+      var meter = form.querySelector('[name="meterNumber"]');
+      if (!/^\d{6,20}$/.test(meter.value.replace(/[\s-]/g, ""))) return invalid(meter, "The meter number should be 6 to 20 digits.");
+      var email = form.querySelector('[name="email"]');
+      if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email.value.trim())) return invalid(email, "Please enter a valid email address.");
+      var phone = form.querySelector('[name="phone"]');
+      if (phone.value.replace(/\D/g, "").length < 7) return invalid(phone, "Please enter a valid phone number.");
+      return true;
     }
 
-    var linkForm = root.querySelector("[data-link-form]");
-    linkForm.addEventListener("submit", function (event) {
+    form.addEventListener("submit", function (event) {
       event.preventDefault();
-      var msg = linkForm.querySelector("[data-msg]");
-      var data = Object.fromEntries(new FormData(linkForm).entries());
-      setMessage(msg, "Linking…", "");
-      api("/api/meters/register", {
-        method: "POST",
-        body: {
-          meterNumber: data.meterNumber,
-          holderName: data.holderName,
-          address: data.address,
-          phone: data.phone,
-          disco: data.disco,
-          tariffBand: data.tariffBand,
-          tariffKoboPerKwh: Number(data.tariffKoboPerKwh),
-          autoTopupFloorKwh: Number(data.autoTopupFloorKwh || 20),
-          imei: state.device ? state.device.imei : undefined,
-          rfid: state.device ? state.device.rfid : undefined,
-        },
-      })
+      if (!check()) return;
+      var button = form.querySelector('[type="submit"]');
+      var body = jsonFromForm(form);
+      delete body.consent;
+      button.disabled = true;
+      setMessage(msg, "Registering your meter…", "");
+
+      api("/api/meters/register", { method: "POST", body: body })
         .then(function (result) {
-          state.meter = result.meter;
-          setMessage(msg, "", "");
-          var topupMeter = root.querySelector('[data-topup] [name="meterNumber"]');
-          if (topupMeter) {
-            topupMeter.value = result.meter.meterNumber;
-            topupMeter.dispatchEvent(new Event("input"));
-          }
-          var summary = root.querySelector("[data-linked-summary]");
-          if (summary) summary.textContent = result.meter.meterNumber + " · " + result.meter.disco;
-          show(3);
+          // Only a registration the database accepted is emailed, so the signup
+          // inbox never holds a meter that is not in the register.
+          return sendToInbox(form, { reference: result.reference }).then(function () { return result; });
         })
-        .catch(function (err) { setMessage(msg, err.message, "bad"); });
+        .then(function (result) {
+          done.querySelector("[data-register-reply]").textContent = result.reply;
+          done.querySelector("[data-register-ref]").textContent = result.reference;
+          done.querySelector("[data-register-meter]").textContent = result.meter.meterNumber;
+          form.hidden = true;
+          done.hidden = false;
+          done.focus();
+          window.scrollTo({ top: done.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" });
+        })
+        .catch(function (err) {
+          button.disabled = false;
+          setMessage(msg, err.message, "bad");
+        });
     });
-
-    root.querySelectorAll("[data-back]").forEach(function (button) {
-      button.addEventListener("click", function () { show(Number(button.getAttribute("data-back"))); });
-    });
-
-    show(1);
   }
 
   /* ---------------------------------------------------------- payment pages */
@@ -471,7 +493,9 @@
 
     function poll() {
       api("/api/payments/verify/" + encodeURIComponent(reference)).then(render).catch(function (err) {
-        out.innerHTML = '<div class="msg bad">' + escapeHtml(err.message) + "</div>";
+        out.innerHTML = '<div class="msg bad">' + escapeHtml(err.status === 404
+          ? "We couldn't find that payment reference. Check the link, or contact info@enapoint.com."
+          : err.message) + "</div>";
       });
     }
     out.innerHTML = '<p class="small"><span class="spinner"></span> Verifying the payment…</p>';
@@ -497,7 +521,7 @@
           // Settling a simulated order is an operator action; say so plainly instead
           // of leaving a visitor with a bare "Authentication required".
           if (err.status === 401 || err.status === 403) {
-            setMessage(out, "Simulated payments can only be settled from the console. Your order is saved under the reference above — an operator can complete it.", "bad");
+            setMessage(out, "Only signed-in Enapoint staff can settle orders. Your order is saved under the reference above.", "");
             return;
           }
           button.disabled = false;
@@ -512,6 +536,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initTheme();
+    initNav();
     initStatus();
     initProducts();
     initSalesEnquiry();
