@@ -159,5 +159,5 @@ export default handler(async (req) => {
 });
 
 export const config: Config = {
-  path: ["/api/stock/upload", "/api/stock/uploads"],
+  path: ["/api/stock/upload", "/api/stock/uploads", "/api/v1/stock/upload", "/api/v1/stock/uploads"],
 };

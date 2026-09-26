@@ -101,7 +101,7 @@ export default handler(async (req, ctx) => {
 });
 
 export const config: Config = {
-  path: ["/api/stock", "/api/stock/:sku"],
+  path: ["/api/stock", "/api/stock/:sku", "/api/v1/stock", "/api/v1/stock/:sku"],
   // /api/stock/upload and /api/stock/uploads belong to stock-upload.mts.
-  excludedPath: ["/api/stock/upload", "/api/stock/uploads"],
+  excludedPath: ["/api/stock/upload", "/api/stock/uploads", "/api/v1/stock/upload", "/api/v1/stock/uploads"],
 };

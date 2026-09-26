@@ -79,5 +79,5 @@ export default handler(async (req, ctx) => {
 });
 
 export const config: Config = {
-  path: ["/api/updates", "/api/updates/:id"],
+  path: ["/api/updates", "/api/updates/:id", "/api/v1/updates", "/api/v1/updates/:id"],
 };

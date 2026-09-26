@@ -36,5 +36,5 @@ export default handler(async (req) => {
 });
 
 export const config: Config = {
-  path: "/api/payments/webhook",
+  path: ["/api/payments/webhook", "/api/v1/payments/webhook"],
 };

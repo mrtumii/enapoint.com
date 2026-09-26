@@ -34,16 +34,45 @@ export class HttpError extends Error {
   }
 }
 
-/** Wraps a handler so thrown HttpErrors become clean JSON and anything else becomes a 500. */
+/**
+ * Partners (banks, DisCos, agencies) call the API from their own servers and, for
+ * dashboards, from their own origins. Access is by Bearer key, never by cookie, so a
+ * wildcard origin is safe: browsers do not attach credentials to wildcard CORS.
+ */
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+  "access-control-allow-headers": "authorization, content-type, idempotency-key, x-request-id",
+  "access-control-expose-headers": "x-request-id",
+  "access-control-max-age": "86400",
+};
+
+/**
+ * Wraps a handler so thrown HttpErrors become clean JSON and anything else becomes a
+ * generic 500 — internal detail goes to the function log, never to the caller. Every
+ * response carries an x-request-id a partner can quote when reporting a problem.
+ */
 export function handler(fn: (req: Request, ctx: any) => Promise<Response>) {
   return async (req: Request, ctx: any) => {
-    try {
-      return await fn(req, ctx);
-    } catch (err) {
-      if (err instanceof HttpError) return fail(err.message, err.status);
-      console.error("unhandled error", err instanceof Error ? err.message : err);
-      return fail("Internal error", 500);
+    const requestId = req.headers.get("x-request-id")?.slice(0, 64) || crypto.randomUUID();
+    if (req.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: { ...CORS_HEADERS, "x-request-id": requestId } });
     }
+    let res: Response;
+    try {
+      res = await fn(req, ctx);
+    } catch (err) {
+      if (err instanceof HttpError) {
+        res = fail(err.message, err.status);
+      } else {
+        const cause = err instanceof Error && err.cause ? ` (${String((err.cause as Error).message ?? err.cause)})` : "";
+        console.error(`[${requestId}] unhandled error`, err instanceof Error ? err.message + cause : err);
+        res = fail("Something went wrong on our side. Please try again shortly.", 500, { requestId });
+      }
+    }
+    for (const [k, v] of Object.entries(CORS_HEADERS)) res.headers.set(k, v);
+    res.headers.set("x-request-id", requestId);
+    return res;
   };
 }
 

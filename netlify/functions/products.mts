@@ -81,5 +81,5 @@ export default handler(async (req, ctx) => {
 });
 
 export const config: Config = {
-  path: ["/api/products", "/api/products/:slug"],
+  path: ["/api/products", "/api/products/:slug", "/api/v1/products", "/api/v1/products/:slug"],
 };
