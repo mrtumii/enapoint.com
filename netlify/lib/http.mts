@@ -1,7 +1,11 @@
 export const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
 };
+
+/** JSON bodies are small forms and records; anything larger is refused before parsing. */
+const MAX_JSON_BYTES = 64 * 1024;
 
 export function ok(body: unknown, status = 200, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), { status, headers: { ...JSON_HEADERS, ...headers } });
@@ -17,7 +21,10 @@ export function methodNotAllowed(allowed: string[]) {
 
 /** Parses a JSON body, tolerating an empty one. */
 export async function readJson<T = Record<string, unknown>>(req: Request): Promise<T> {
+  const declared = Number(req.headers.get("content-length") || 0);
+  if (declared > MAX_JSON_BYTES) throw new HttpError("Request body is too large", 413);
   const raw = await req.text();
+  if (raw.length > MAX_JSON_BYTES) throw new HttpError("Request body is too large", 413);
   if (!raw.trim()) return {} as T;
   try {
     return JSON.parse(raw) as T;
@@ -28,6 +35,7 @@ export async function readJson<T = Record<string, unknown>>(req: Request): Promi
 
 export class HttpError extends Error {
   status: number;
+  retryAfter?: number;
   constructor(message: string, status = 400) {
     super(message);
     this.status = status;
@@ -47,6 +55,29 @@ const CORS_HEADERS = {
   "access-control-max-age": "86400",
 };
 
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/**
+ * The console signs in with a cookie, so a state-changing request that carries that
+ * cookie must come from this site. Browsers always send Origin on cross-site POST,
+ * PATCH and DELETE; when it names another host the request is refused before any
+ * handler runs. Server-to-server partner calls authenticate with a Bearer key, send
+ * no cookie, and are unaffected.
+ */
+function isCrossSiteCookieRequest(req: Request) {
+  if (SAFE_METHODS.has(req.method)) return false;
+  if (!/(?:^|;\s*)ena_session=/.test(req.headers.get("cookie") || "")) return false;
+  const origin = req.headers.get("origin");
+  const fetchSite = req.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return true;
+  if (!origin) return false;
+  try {
+    return new URL(origin).host !== new URL(req.url).host;
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Wraps a handler so thrown HttpErrors become clean JSON and anything else becomes a
  * generic 500 — internal detail goes to the function log, never to the caller. Every
@@ -60,10 +91,12 @@ export function handler(fn: (req: Request, ctx: any) => Promise<Response>) {
     }
     let res: Response;
     try {
+      if (isCrossSiteCookieRequest(req)) throw new HttpError("Cross-site request refused", 403);
       res = await fn(req, ctx);
     } catch (err) {
       if (err instanceof HttpError) {
         res = fail(err.message, err.status);
+        if (err.retryAfter) res.headers.set("retry-after", String(err.retryAfter));
       } else {
         const cause = err instanceof Error && err.cause ? ` (${String((err.cause as Error).message ?? err.cause)})` : "";
         console.error(`[${requestId}] unhandled error`, err instanceof Error ? err.message + cause : err);

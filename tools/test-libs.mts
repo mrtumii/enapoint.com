@@ -9,6 +9,7 @@ import { createHmac } from "node:crypto";
 import { parseCsv, parseCsvRecords } from "../netlify/lib/csv.mts";
 import { generateApiKey, checkAdminPassword, issueSessionCookie, hasAdminSession, isConsoleConfigured } from "../netlify/lib/auth.mts";
 import { newReference, verifyWebhookSignature, provider } from "../netlify/lib/payments.mts";
+import { looksLikeBot, stripBotFields } from "../netlify/lib/guard.mts";
 
 let fails = 0;
 const t = (name: string, cond: boolean, extra = "") => { console.log((cond ? "PASS " : "FAIL ") + name + (extra ? "  " + extra : "")); if (!cond) fails++; };
@@ -70,6 +71,14 @@ t("live accepts correct signature", verifyWebhookSignature('{"event":"charge.suc
 t("live rejects signature over a different body", verifyWebhookSignature('{"event":"charge.failed"}', good) === false);
 delete process.env.PAYSTACK_SECRET_KEY;
 delete process.env.ENA_ADMIN_PASSWORD;
+
+// bot filter: website forms send _hp and _t, partner calls send neither
+t("partner body without signals passes", looksLikeBot({ name: "A" }) === false);
+t("person with empty honeypot passes", looksLikeBot({ _hp: "", _t: 9000 }) === false);
+t("filled honeypot is a bot", looksLikeBot({ _hp: "http://spam", _t: 9000 }) === true);
+t("instant submit is a bot", looksLikeBot({ _hp: "", _t: 300 }) === true);
+t("non-numeric timer is a bot", looksLikeBot({ _t: "soon" }) === true);
+t("bot fields are stripped", JSON.stringify(stripBotFields({ a: 1, _hp: "", _t: 5 })) === '{"a":1}');
 
 console.log(fails === 0 ? "\nALL PASS" : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

@@ -125,13 +125,19 @@
       .catch(function () { return false; });
   }
 
+  // Anti-bot signals for the API: the honeypot's value and how long the page was
+  // open. People leave the honeypot empty and take more than a couple of seconds.
+  var PAGE_OPENED = Date.now();
+
   function jsonFromForm(form) {
     var body = {};
     new FormData(form).forEach(function (value, key) {
-      if (key === "form-name" || key === "bot-field" || key === "subject") return;
+      if (key === "form-name" || key === "subject") return;
+      if (key === "bot-field") { body._hp = value; return; }
       var field = form.querySelector('[name="' + key + '"]');
       body[key] = field && field.dataset.number !== undefined ? Number(value) : value;
     });
+    body._t = Date.now() - PAGE_OPENED;
     return body;
   }
 

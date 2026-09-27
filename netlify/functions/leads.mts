@@ -4,10 +4,16 @@ import { db } from "../../db/index.js";
 import { contactMessages, gridRequests } from "../../db/schema.js";
 import { ok, handler, readJson, requireFields, methodNotAllowed } from "../lib/http.mjs";
 import { requireConsole } from "../lib/auth.mjs";
+import { throttle, looksLikeBot, stripBotFields } from "../lib/guard.mjs";
 
 const EMAIL = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
+const str = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
+const num = (v: unknown, fallback: number) => {
+  const n = Number(v ?? fallback);
+  return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n), 1_000_000) : fallback;
+};
 
-export default handler(async (req) => {
+export default handler(async (req, ctx) => {
   const path = new URL(req.url).pathname;
   const isGrid = path.includes("grid-request");
 
@@ -20,7 +26,14 @@ export default handler(async (req) => {
   }
 
   if (req.method !== "POST") return methodNotAllowed(["GET", "POST"]);
-  const body = await readJson(req);
+  await throttle(req, ctx, isGrid ? "grid-request" : "contact", 5, 10 * 60);
+  const raw = await readJson(req);
+  // Bots get the same success reply a person would, so they learn nothing, but
+  // nothing is stored.
+  if (looksLikeBot(raw)) {
+    return ok({ received: true, reply: isGrid ? "We reply to grid requests within two working days." : "We reply within one working day." }, 201);
+  }
+  const body = stripBotFields(raw);
 
   if (isGrid) {
     requireFields(body, ["contactName", "contactEmail"]);
@@ -28,16 +41,16 @@ export default handler(async (req) => {
     const [row] = await db
       .insert(gridRequests)
       .values({
-        systemType: (body.systemType as string) ?? "mini-grid",
-        sector: (body.sector as string) ?? "estate",
-        peakLoadKw: Number(body.peakLoadKw ?? 100),
-        storageKwh: Number(body.storageKwh ?? 0),
-        meterCount: Number(body.meterCount ?? 0),
-        buildWindow: (body.buildWindow as string) ?? "",
-        contactName: String(body.contactName),
-        contactEmail: String(body.contactEmail),
-        location: (body.location as string) ?? "",
-        notes: (body.notes as string) ?? "",
+        systemType: str(body.systemType ?? "mini-grid", 60),
+        sector: str(body.sector ?? "estate", 60),
+        peakLoadKw: num(body.peakLoadKw, 100),
+        storageKwh: num(body.storageKwh, 0),
+        meterCount: num(body.meterCount, 0),
+        buildWindow: str(body.buildWindow, 60),
+        contactName: str(body.contactName, 120),
+        contactEmail: str(body.contactEmail, 200),
+        location: str(body.location, 200),
+        notes: str(body.notes, 5000),
       })
       .returning();
     return ok({ received: true, id: row.id, reply: "We reply to grid requests within two working days." }, 201);
@@ -48,12 +61,12 @@ export default handler(async (req) => {
   const [row] = await db
     .insert(contactMessages)
     .values({
-      topic: (body.topic as string) ?? "general",
-      name: String(body.name),
-      company: (body.company as string) ?? "",
-      email: String(body.email),
-      phone: (body.phone as string) ?? "",
-      message: (body.message as string) ?? "",
+      topic: str(body.topic ?? "general", 60),
+      name: str(body.name, 120),
+      company: str(body.company, 160),
+      email: str(body.email, 200),
+      phone: str(body.phone, 40),
+      message: str(body.message, 5000),
     })
     .returning();
   return ok({ received: true, id: row.id, reply: "We reply within one working day." }, 201);
