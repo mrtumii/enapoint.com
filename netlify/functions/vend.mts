@@ -17,7 +17,7 @@ export default handler(async (req) => {
     await requireWriteAccess(req);
     const body = await readJson(req);
     requireFields(body, ["meterNumber"]);
-    const meterNumber = String(body.meterNumber).trim();
+    const meterNumber = String(body.meterNumber).replace(/[\s-]/g, "");
 
     const [meter] = await db.select().from(meters).where(eq(meters.meterNumber, meterNumber)).limit(1);
     if (!meter) return fail("Meter not found", 404);
@@ -57,5 +57,5 @@ export default handler(async (req) => {
 });
 
 export const config: Config = {
-  path: ["/api/vend", "/api/vend/flush"],
+  path: ["/api/vend", "/api/vend/flush", "/api/v1/vend", "/api/v1/vend/flush"],
 };

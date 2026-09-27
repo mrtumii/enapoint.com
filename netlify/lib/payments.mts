@@ -35,7 +35,11 @@ function vendToken() {
 export async function quote(amountKobo: number, meterNumber?: string) {
   let tariff = DEFAULT_TARIFF_KOBO_PER_KWH;
   if (meterNumber) {
-    const [meter] = await db.select().from(meters).where(eq(meters.meterNumber, meterNumber)).limit(1);
+    const [meter] = await db
+      .select()
+      .from(meters)
+      .where(eq(meters.meterNumber, meterNumber.replace(/[\s-]/g, "")))
+      .limit(1);
     if (meter) tariff = meter.tariffKoboPerKwh;
   }
   return {

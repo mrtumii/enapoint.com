@@ -30,12 +30,13 @@
         <span>ENAPOINT</span>
       </a>
       <div class="header-actions">
-        <a class="pill" href="/dashboard">Console</a>
+        <a class="pill hide-sm" href="/register">Register a meter</a>
         <button class="icon-btn" data-theme-toggle type="button" aria-label="Switch theme">&#9728;</button>
         <a class="cta" href="/contact">Request a quote</a>
+        <button class="icon-btn nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu"><span aria-hidden="true"></span></button>
       </div>
     </div>
-    <nav class="site-nav" aria-label="Main">
+    <nav class="site-nav" id="site-nav" aria-label="Main">
         <a href="/">Home</a>
         <a href="/products">Products</a>
         <a href="/panels">Solar</a>
@@ -47,6 +48,7 @@
         <a href="/lab">Manufacturing</a>
         <a href="/refi">Impact</a>
         <a href="/app">ENA Control</a>
+        <a href="/developers">Partners &amp; API</a>
         <a href="/about">About</a>
         <a href="/support">Support</a>
         <a href="/contact">Contact</a>
@@ -94,15 +96,18 @@
           </div>
           <div>
             <h2>Request a design</h2>
-            <form class="card raised" data-api-form="/api/grid-requests">
+            <form class="card raised" name="project-request" method="POST" action="/grid" data-netlify="true" netlify-honeypot="bot-field" data-api-form="/api/grid-requests">
+              <input type="hidden" name="form-name" value="project-request">
+              <input type="hidden" name="subject" data-remove-prefix value="New mini-grid design request — enapoint.com">
+              <p hidden><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
               <input type="hidden" name="systemType" value="mini-grid">
               <input type="hidden" name="sector" value="estate">
               <input type="hidden" name="peakLoadKw" value="250" data-number>
               <input type="hidden" name="storageKwh" value="800" data-number>
               <input type="hidden" name="meterCount" value="139" data-number>
               <input type="hidden" name="buildWindow" value="4–6 months">
-              <div class="field"><label for="g-name">Site contact name</label><input id="g-name" name="contactName" required></div>
-              <div class="field"><label for="g-email">Email or phone</label><input id="g-email" name="contactEmail" type="email" required></div>
+              <div class="field"><label for="g-name">Site contact name</label><input id="g-name" name="contactName" required autocomplete="name"></div>
+              <div class="field"><label for="g-email">Email</label><input id="g-email" name="contactEmail" type="email" required autocomplete="email" inputmode="email"></div>
               <div class="field"><label for="g-loc">Site location</label><input id="g-loc" name="location" placeholder="Town, state or country"></div>
               <div class="field"><label for="g-notes">Anything unusual about the load</label><textarea id="g-notes" name="notes" placeholder="Existing generation, outage pattern, expansion plans&hellip;"></textarea></div>
               <button class="btn" type="submit" style="width:100%">Send request &middot; reply in 2 working days</button>
@@ -132,7 +137,7 @@
           <div class="card">
             <h3>Already running a plant?</h3>
             <p class="small">Bring existing generation onto ENA metering, control and billing without replacing what produces the power. The connection happens through the developer console.</p>
-            <a class="pill" href="/dashboard#apis">Open the console &rarr;</a>
+            <a class="pill" href="/developers">Partners &amp; API &rarr;</a>
           </div>
         </div>
       </div>
@@ -148,6 +153,7 @@
             <span>ENAPOINT</span>
           </a>
           <p class="small">Decentralised energy &mdash; solar, storage, power conversion and the software that reports on all three. Abuja, Nigeria &middot; Quincy, Massachusetts.</p>
+          <p class="small mb0"><a href="mailto:info@enapoint.com">info@enapoint.com</a><br><a href="tel:+2348179189600">+234 817 918 9600</a></p>
         </div>
         <div>
           <h4>Products</h4>
@@ -158,8 +164,8 @@
           <ul><li><a href="/about">About Enapoint</a></li><li><a href="/lab">Manufacturing</a></li><li><a href="/refi">Sustainability &amp; impact</a></li><li><a href="/contact">Contact</a></li></ul>
         </div>
         <div>
-          <h4>Developers</h4>
-          <ul><li><a href="/dashboard#apis">API reference</a></li><li><a href="/dashboard#keys">API keys</a></li><li><a href="/dashboard">Console</a></li><li><a href="/support">System status</a></li></ul>
+          <h4>Partners</h4>
+          <ul><li><a href="/developers">Partners &amp; API</a></li><li><a href="/developers#reference">API reference</a></li><li><a href="/dashboard">Staff console</a></li><li><a href="/support">System status</a></li></ul>
         </div>
         <div>
           <h4>Account</h4>

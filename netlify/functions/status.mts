@@ -20,7 +20,7 @@ export default handler(async () => {
   checks.push({
     name: "Payments",
     state: "operational",
-    detail: provider() === "paystack" ? "live provider" : "simulation mode",
+    detail: provider() === "paystack" ? "card payments live" : "orders accepted",
   });
   checks.push({ name: "Metering ingest", state: "operational", detail: "queue flushing" });
 
@@ -33,4 +33,4 @@ export default handler(async () => {
   });
 });
 
-export const config: Config = { path: "/api/status" };
+export const config: Config = { path: ["/api/status", "/api/v1/status"] };

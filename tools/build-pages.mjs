@@ -19,6 +19,7 @@ const NAV = [
   ["/lab", "Manufacturing"],
   ["/refi", "Impact"],
   ["/app", "ENA Control"],
+  ["/developers", "Partners & API"],
   ["/about", "About"],
   ["/support", "Support"],
   ["/contact", "Contact"],
@@ -27,7 +28,7 @@ const NAV = [
 const FOOTER = [
   ["Products", [["/panels", "ENA Solar Panels"], ["/panels#slates", "ENA Slates"], ["/cells", "ENA Powerwall"], ["/cells#lit", "ENA LIT LI"], ["/pops", "POPS"], ["/ev", "EV charging"]]],
   ["Company", [["/about", "About Enapoint"], ["/lab", "Manufacturing"], ["/refi", "Sustainability & impact"], ["/contact", "Contact"]]],
-  ["Developers", [["/dashboard#apis", "API reference"], ["/dashboard#keys", "API keys"], ["/dashboard", "Console"], ["/support", "System status"]]],
+  ["Partners", [["/developers", "Partners & API"], ["/developers#reference", "API reference"], ["/dashboard", "Staff console"], ["/support", "System status"]]],
   ["Account", [["/register", "Register a meter"], ["/meter#topup", "Buy units"], ["/app", "Get ENA Control"], ["/support", "Support"]]],
 ];
 
@@ -80,12 +81,13 @@ function layout({ slug, title, description, body, script = "" }) {
         <span>ENAPOINT</span>
       </a>
       <div class="header-actions">
-        <a class="pill" href="/dashboard">Console</a>
+        <a class="pill hide-sm" href="/register">Register a meter</a>
         <button class="icon-btn" data-theme-toggle type="button" aria-label="Switch theme">&#9728;</button>
         <a class="cta" href="/contact">Request a quote</a>
+        <button class="icon-btn nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu"><span aria-hidden="true"></span></button>
       </div>
     </div>
-    <nav class="site-nav" aria-label="Main">
+    <nav class="site-nav" id="site-nav" aria-label="Main">
         ${nav}
     </nav>
   </header>
@@ -103,6 +105,7 @@ ${body}
             <span>ENAPOINT</span>
           </a>
           <p class="small">Decentralised energy &mdash; solar, storage, power conversion and the software that reports on all three. Abuja, Nigeria &middot; Quincy, Massachusetts.</p>
+          <p class="small mb0"><a href="mailto:info@enapoint.com">info@enapoint.com</a><br><a href="tel:+2348179189600">+234 817 918 9600</a></p>
         </div>
         ${footer}
       </div>
@@ -127,6 +130,9 @@ const section = (inner, attrs = "") => `    <section class="section"${attrs ? " 
 const eyebrow = (t) => `        <p class="eyebrow">${esc(t)}</p>`;
 const stats = (rows) =>
   `        <div class="grid g3">${rows.map(([v, l]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("")}</div>`;
+/* Like specs(), but the value is trusted markup (mailto/tel links). */
+const linkSpecs = (rows) =>
+  rows.map(([k, v]) => `<div class="spec-row"><span class="k">${esc(k)}</span><span class="v">${v}</span></div>`).join("");
 const specs = (rows) =>
   rows.map(([k, v]) => `<div class="spec-row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join("");
 const cards = (items) =>
@@ -684,15 +690,18 @@ page({
           </div>
           <div>
             <h2>Request a design</h2>
-            <form class="card raised" data-api-form="/api/grid-requests">
+            <form class="card raised" name="project-request" method="POST" action="/grid" data-netlify="true" netlify-honeypot="bot-field" data-api-form="/api/grid-requests">
+              <input type="hidden" name="form-name" value="project-request">
+              <input type="hidden" name="subject" data-remove-prefix value="New mini-grid design request — enapoint.com">
+              <p hidden><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
               <input type="hidden" name="systemType" value="mini-grid">
               <input type="hidden" name="sector" value="estate">
               <input type="hidden" name="peakLoadKw" value="250" data-number>
               <input type="hidden" name="storageKwh" value="800" data-number>
               <input type="hidden" name="meterCount" value="139" data-number>
               <input type="hidden" name="buildWindow" value="4–6 months">
-              <div class="field"><label for="g-name">Site contact name</label><input id="g-name" name="contactName" required></div>
-              <div class="field"><label for="g-email">Email or phone</label><input id="g-email" name="contactEmail" type="email" required></div>
+              <div class="field"><label for="g-name">Site contact name</label><input id="g-name" name="contactName" required autocomplete="name"></div>
+              <div class="field"><label for="g-email">Email</label><input id="g-email" name="contactEmail" type="email" required autocomplete="email" inputmode="email"></div>
               <div class="field"><label for="g-loc">Site location</label><input id="g-loc" name="location" placeholder="Town, state or country"></div>
               <div class="field"><label for="g-notes">Anything unusual about the load</label><textarea id="g-notes" name="notes" placeholder="Existing generation, outage pattern, expansion plans&hellip;"></textarea></div>
               <button class="btn" type="submit" style="width:100%">Send request &middot; reply in 2 working days</button>
@@ -727,7 +736,7 @@ ${steps([
           <div class="card">
             <h3>Already running a plant?</h3>
             <p class="small">Bring existing generation onto ENA metering, control and billing without replacing what produces the power. The connection happens through the developer console.</p>
-            <a class="pill" href="/dashboard#apis">Open the console &rarr;</a>
+            <a class="pill" href="/developers">Partners &amp; API &rarr;</a>
           </div>
         </div>`,
     ),
@@ -1014,7 +1023,7 @@ ${cards([
               ["Receipts", "Buy in the app, read it on the web"],
               ["Offline", "Purchases queue and reconcile on reconnect"],
             ])}</div>
-            <a class="pill" href="/dashboard#apis" style="margin-top:16px">API reference &rarr;</a>
+            <a class="pill" href="/developers#reference" style="margin-top:16px">API reference &rarr;</a>
           </div>
         </div>`,
     ),
@@ -1134,6 +1143,124 @@ ${faqs([
   ].join("\n"),
 });
 
+/* -------------------------------------------------------------- developers */
+
+// The public endpoint reference. console.js lists the same routes for staff.
+const ENDPOINTS = [
+  ["Meters", [
+    ["POST", "/api/v1/meters/register", "Register a customer meter. With a write-scoped key the meter is recorded as verified.", "public / write"],
+    ["POST", "/api/v1/meters/verify", "Check whether a meter number, IMEI or RFID is already registered.", "public"],
+    ["GET", "/api/v1/meters/:number", "Meter status and tariff. Holder details and recent tokens with a key.", "public / read"],
+    ["PATCH", "/api/v1/meters/:number", "Update status (verified, suspended&hellip;), DisCo or tariff.", "write"],
+    ["GET", "/api/v1/meters?status=pending-verification", "List registered meters, filterable by status.", "read"],
+  ]],
+  ["Payments &amp; vending", [
+    ["POST", "/api/v1/payments/quote", "Price a top-up: units, service charge and tariff for an amount.", "public"],
+    ["POST", "/api/v1/payments/initialize", "Create an order and return the checkout URL.", "public"],
+    ["GET", "/api/v1/payments/verify/:reference", "Verify an order, settle it and return the token.", "public"],
+    ["POST", "/api/v1/payments/webhook", "Payment provider callback, signature-verified.", "signed"],
+    ["GET", "/api/v1/vend", "Vending log with queued and delivered tokens.", "read"],
+    ["POST", "/api/v1/vend/flush", "Deliver queued units when a meter reconnects.", "write"],
+  ]],
+  ["Catalogue &amp; platform", [
+    ["GET", "/api/v1/products", "Product catalogue and pricing.", "public"],
+    ["GET", "/api/v1/updates", "Product and firmware notices.", "public"],
+    ["GET", "/api/v1/devices", "Connected devices on the account.", "read"],
+    ["GET", "/api/v1/status", "Platform health.", "public"],
+    ["POST", "/api/v1/contact", "Submit an enquiry to the Enapoint desk.", "public"],
+  ]],
+];
+
+page({
+  slug: "developers",
+  title: "Partners & API — Enapoint",
+  description:
+    "Connect your bank, DisCo, agency or payment platform to Enapoint: meter registration, vending and payments over a versioned REST API with scoped keys.",
+  body: [
+    section(
+      `${eyebrow("Partners & API")}
+        <h1>Integrate with ENA metering and payments</h1>
+        <p class="lede">A versioned REST API for banks, payment platforms, distribution companies, regulators and government agencies. Register meters, price and settle top-ups, and follow vending &mdash; with scoped keys, JSON everywhere and a request ID on every response.</p>
+        <div class="flex"><a class="cta" href="/contact?topic=partnerships">Request partner access</a><a class="pill" href="#reference">API reference</a><a class="pill" href="/openapi.json">OpenAPI spec</a></div>`,
+    ),
+    section(
+      `        <h2>Who connects to ENA</h2>
+${cards([
+        ["Banks & fintechs", "Sell units from your app, USSD or branch channels. Quote, initialise and verify top-ups, and receive the backup token in the response."],
+        ["Distribution companies", "Push verified customer meters straight into the register and keep tariff bands and meter status in sync with your records."],
+        ["Government & parastatals", "Read-only keys for programme monitoring: registered meters, vending volumes and platform health, for reporting and oversight."],
+      ])}`,
+    ),
+    section(
+      `        <div class="split align-start">
+          <div>
+            <h2>How access works</h2>
+${steps([
+        ["Request access", "Tell us your organisation and use case. We agree scopes and issue a test key the same week."],
+        ["Build against test", "Test keys (ena_test_…) never move real money. Every route behaves exactly as it does in production."],
+        ["Go live", "After a short review we issue a live key (ena_live_…). Keys are rotated every 90 days and can be revoked instantly."],
+      ])}
+          </div>
+          <div class="card">
+${eyebrow("Conventions")}
+            <div style="margin-top:6px">${specs([
+              ["Base URL", "https://www.enapoint.com/api/v1"],
+              ["Auth", "Authorization: Bearer <key>"],
+              ["Scopes", "read · write"],
+              ["Format", "JSON in, JSON out, UTF-8"],
+              ["Money", "Kobo (integer); energy in milli-kWh"],
+              ["Errors", "HTTP status + { \"error\": \"…\" }"],
+              ["Tracing", "x-request-id on every response"],
+              ["CORS", "Enabled for key-authenticated calls"],
+            ])}</div>
+          </div>
+        </div>`,
+    ),
+    section(
+      `        <h2 id="reference">API reference</h2>
+        <p class="small">Unversioned <span class="mono">/api/&hellip;</span> paths remain available, but new integrations should use <span class="mono">/api/v1</span>. The machine-readable description is at <a href="/openapi.json">/openapi.json</a>.</p>
+${ENDPOINTS.map(([group, rows]) => `        <h3 style="margin-top:28px">${group}</h3>
+        <div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Purpose</th><th>Access</th></tr></thead><tbody>${rows
+          .map(([m, path, what, access]) => `<tr><td><span class="tag">${m}</span></td><td class="mono">${esc(path)}</td><td>${what}</td><td><span class="tag">${esc(access)}</span></td></tr>`)
+          .join("")}</tbody></table></div>`).join("\n")}`,
+    ),
+    section(
+      `        <div class="grid g2">
+          <div class="card">
+            <p class="tiny">Register a verified meter &middot; partner key</p>
+            <pre class="code">curl -X POST https://www.enapoint.com/api/v1/meters/register \\
+  -H 'authorization: Bearer ena_live_…' \\
+  -H 'content-type: application/json' \\
+  -d '{"meterNumber":"45128890231","holderName":"Amaka Okonkwo",
+       "email":"amaka@example.com","phone":"08030000000",
+       "address":"12B Gado Nasko Way, Apo","state":"FCT Abuja",
+       "disco":"AEDC","tariffBand":"B","meterType":"single-phase"}'</pre>
+          </div>
+          <div class="card">
+            <p class="tiny">Price a top-up</p>
+            <pre class="code">curl -X POST https://www.enapoint.com/api/v1/payments/quote \\
+  -H 'content-type: application/json' \\
+  -d '{"amountNaira":5000,"meterNumber":"45128890231"}'
+
+{"amountKobo":500000,"serviceChargeKobo":5000,
+ "tariffKoboPerKwh":28500,"unitsKwhMilli":17368}</pre>
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:20px">
+          <div class="card">
+            <h3>Security</h3>
+            <p class="small mb0">TLS only. Keys are stored as SHA-256 hashes and shown once. Write access is a separate scope. Personal data (names, phones, addresses) is only returned to authenticated callers, and processing follows the NDPR.</p>
+          </div>
+          <div class="card">
+            <h3>Talk to the integrations desk</h3>
+            <p class="small">Email <a href="mailto:info@enapoint.com">info@enapoint.com</a> with your organisation, the integration you have in mind and a technical contact.</p>
+            <a class="pill" href="/contact?topic=partnerships">Request partner access &rarr;</a>
+          </div>
+        </div>`,
+    ),
+  ].join("\n"),
+});
+
 /* ----------------------------------------------------------------- contact */
 
 page({
@@ -1151,7 +1278,10 @@ page({
       `        <div class="split">
           <div>
             <h2>Send a message</h2>
-            <form class="card raised" data-api-form="/api/contact" style="margin-top:18px">
+            <form class="card raised" name="enquiry" method="POST" action="/contact" data-netlify="true" netlify-honeypot="bot-field" data-api-form="/api/contact" style="margin-top:18px">
+              <input type="hidden" name="form-name" value="enquiry">
+              <input type="hidden" name="subject" data-remove-prefix value="New website enquiry — enapoint.com">
+              <p hidden><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
               <div class="field">
                 <label for="c-topic">I'm here about</label>
                 <select id="c-topic" name="topic">
@@ -1162,29 +1292,33 @@ page({
                   <option value="api">API access</option>
                   <option value="support">Support with an existing account</option>
                   <option value="lab">Manufacturing programme</option>
+                  <option value="government">Government, regulator or parastatal</option>
+                  <option value="banking">Banking &amp; payments partnership</option>
+                  <option value="general">Something else</option>
                 </select>
               </div>
               <div class="field-row">
-                <div class="field"><label for="c-name">Full name</label><input id="c-name" name="name" required></div>
-                <div class="field"><label for="c-company">Company (optional)</label><input id="c-company" name="company"></div>
+                <div class="field"><label for="c-name">Full name</label><input id="c-name" name="name" required autocomplete="name" maxlength="120"></div>
+                <div class="field"><label for="c-company">Organisation (optional)</label><input id="c-company" name="company" autocomplete="organization" maxlength="160"></div>
               </div>
               <div class="field-row">
-                <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" required></div>
-                <div class="field"><label for="c-phone">Phone</label><input id="c-phone" name="phone"></div>
+                <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" required autocomplete="email" inputmode="email"></div>
+                <div class="field"><label for="c-phone">Phone (optional)</label><input id="c-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel"></div>
               </div>
-              <div class="field"><label for="c-msg">How can we help?</label><textarea id="c-msg" name="message" required></textarea></div>
+              <div class="field"><label for="c-msg">How can we help?</label><textarea id="c-msg" name="message" required maxlength="5000"></textarea></div>
               <button class="btn" type="submit" style="width:100%">Send message</button>
               <div class="msg" data-msg hidden></div>
-              <p class="note">We reply within one working day</p>
+              <p class="note">Sent to info@enapoint.com &middot; we reply within one working day</p>
             </form>
           </div>
           <div>
             <h2>Reach us directly</h2>
-            <div class="card">${specs([
-              ["General", "info@enapoint.com"],
-              ["Sales", "sales@enapoint.com"],
-              ["Nigeria", "+234 817 918 9600"],
-              ["United States", "+1 515 723 9517"],
+            <div class="card">${linkSpecs([
+              ["General enquiries", '<a href="mailto:info@enapoint.com">info@enapoint.com</a>'],
+              ["Meter registration", '<a href="mailto:signup@enapoint.com">signup@enapoint.com</a>'],
+              ["Sales", '<a href="mailto:sales@enapoint.com">sales@enapoint.com</a>'],
+              ["Nigeria", '<a href="tel:+2348179189600">+234 817 918 9600</a>'],
+              ["United States", '<a href="tel:+15157239517">+1 515 723 9517</a>'],
             ])}</div>
             <h2 style="margin-top:32px">Offices</h2>
             <div class="card">${specs([
@@ -1198,13 +1332,13 @@ page({
                 ["Sales", "Hardware, quotes and site surveys"],
                 ["Projects", "Mini-grids, captive power and utility plant"],
                 ["Partnerships", "Distribution, charger hosting and manufacturing"],
-                ["Developers", "API access, keys and webhooks"],
+                ["Institutions", "Banks, DisCos, agencies and parastatals"],
               ])}</div>
             </div>
             <div class="card" style="margin-top:20px">
-              <h3>Developers</h3>
-              <p class="small">API access does not need a sales conversation &mdash; generate a test key in the console and start calling.</p>
-              <a class="pill" href="/dashboard#keys">Open the console &rarr;</a>
+              <h3>Integrating with ENA?</h3>
+              <p class="small">Banks, DisCos, government agencies and payment platforms can connect to meter registration, vending and payments over our REST API.</p>
+              <a class="pill" href="/developers">Partners &amp; API &rarr;</a>
             </div>
           </div>
         </div>`,
@@ -1213,123 +1347,104 @@ page({
 });
 /* ---------------------------------------------------------------- register */
 
+const NG_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT Abuja", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
+// Kept in step with DISCOS in netlify/functions/meters.mts, which validates the value.
+const DISCO_OPTIONS = [
+  ["AEDC", "Abuja (AEDC)"], ["BEDC", "Benin (BEDC)"], ["EKEDC", "Eko (EKEDC)"], ["EEDC", "Enugu (EEDC)"],
+  ["IBEDC", "Ibadan (IBEDC)"], ["IKEDC", "Ikeja Electric (IKEDC)"], ["JED", "Jos (JED)"], ["KAEDCO", "Kaduna (KAEDCO)"],
+  ["KEDCO", "Kano (KEDCO)"], ["PHED", "Port Harcourt (PHED)"], ["YEDC", "Yola (YEDC)"], ["Aba Power", "Aba Power"],
+  ["Mini-grid / private", "Mini-grid or private network"],
+];
+const options = (rows, placeholder) =>
+  (placeholder ? `<option value="" disabled selected>${esc(placeholder)}</option>` : "") +
+  rows.map((r) => (Array.isArray(r) ? `<option value="${esc(r[0])}">${esc(r[1])}</option>` : `<option>${esc(r)}</option>`)).join("");
+
 page({
   slug: "register",
   title: "Register a smart meter — Enapoint",
   description:
-    "Link your meter to ENA by IMEI or RFID and the grid knows where to send credit. Three steps, about two minutes, no visit to a vending office.",
+    "Sign your prepaid meter up with Enapoint. Enter your meter and account details once, our team verifies them with your distribution company, and you can buy power from anywhere.",
   body: [
     section(
       `${eyebrow("Smart meter registration")}
-        <h1>Register once. Buy power from anywhere, forever.</h1>
-        <p class="lede">Link your meter to ENA by IMEI or RFID and the grid knows where to send credit. Three steps, about two minutes, no visit to a vending office.</p>`,
+        <h1>Register your meter with Enapoint</h1>
+        <p class="lede">Enter your meter and account details once. Our team verifies them with your distribution company and confirms by email &mdash; usually within one working day.</p>`,
     ),
     section(
-      `        <div data-register>
-          <div class="stepper" data-stepper><i></i><i></i><i></i></div>
+      `        <div class="split align-start" data-register>
+          <div>
+            <form class="card raised" name="meter-registration" method="POST" action="/register" data-netlify="true" netlify-honeypot="bot-field" data-register-form novalidate>
+              <input type="hidden" name="form-name" value="meter-registration">
+              <input type="hidden" name="subject" data-remove-prefix value="New meter registration — enapoint.com">
+              <input type="hidden" name="reference" value="">
+              <p hidden><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
 
-          <div data-step="1">
-            <div class="split">
-              <div>
-                <h2>How would you like to identify the meter?</h2>
-                <p class="small">The IMEI is printed on the meter body. The RFID is on the card issued with it. Either one finds the device.</p>
-                <form data-verify-form class="card raised" style="margin-top:20px">
-                  <div class="field">
-                    <label>Identify by</label>
-                    <div class="flex">
-                      <button class="chip" type="button" data-mode="imei" aria-pressed="true">IMEI</button>
-                      <button class="chip" type="button" data-mode="rfid" aria-pressed="false">RFID</button>
-                    </div>
-                  </div>
-                  <div class="field">
-                    <label for="r-id" data-identifier-label>IMEI number</label>
-                    <input id="r-id" name="identifier" required placeholder="356938035643809" autocomplete="off">
-                  </div>
-                  <button class="btn" type="submit" style="width:100%">Verify device</button>
-                  <div class="msg" data-msg hidden></div>
-                  <p class="note">&#8981; Scan with your camera instead</p>
-                </form>
-              </div>
-              <div class="card">
+              <fieldset>
+                <legend>Account holder</legend>
+                <div class="field"><label for="r-name">Full name</label><input id="r-name" name="holderName" required autocomplete="name" maxlength="120"></div>
+                <div class="field-row">
+                  <div class="field"><label for="r-email">Email</label><input id="r-email" name="email" type="email" required autocomplete="email" inputmode="email"></div>
+                  <div class="field"><label for="r-phone">Phone</label><input id="r-phone" name="phone" type="tel" required autocomplete="tel" inputmode="tel" placeholder="0803 000 0000"></div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Meter</legend>
+                <div class="field"><label for="r-meter">Meter number</label><input id="r-meter" name="meterNumber" required inputmode="numeric" autocomplete="off" placeholder="e.g. 4512 8890 2310" maxlength="30"><p class="hint">Printed on the meter and on your last token receipt.</p></div>
+                <div class="field-row">
+                  <div class="field"><label for="r-disco">Distribution company</label><select id="r-disco" name="disco" required>${options(DISCO_OPTIONS, "Select your DisCo")}</select></div>
+                  <div class="field"><label for="r-band">Tariff band</label><select id="r-band" name="tariffBand"><option value="A">Band A</option><option value="B">Band B</option><option value="C" selected>Band C</option><option value="D">Band D</option><option value="E">Band E</option></select></div>
+                </div>
+                <div class="field-row">
+                  <div class="field"><label for="r-type">Meter type</label><select id="r-type" name="meterType"><option value="single-phase">Single-phase</option><option value="three-phase">Three-phase</option></select></div>
+                  <div class="field"><label for="r-imei">IMEI or RFID (optional)</label><input id="r-imei" name="imei" autocomplete="off" maxlength="40"></div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Premises</legend>
+                <div class="field"><label for="r-addr">Address</label><input id="r-addr" name="address" required autocomplete="street-address" maxlength="300" placeholder="12B Gado Nasko Way, Apo"></div>
+                <div class="field"><label for="r-state">State</label><select id="r-state" name="state" required>${options(NG_STATES, "Select a state")}</select></div>
+              </fieldset>
+
+              <label class="check"><input type="checkbox" name="consent" value="yes" required> I confirm these details are correct and agree that Enapoint may process them to register and service this meter, in line with the NDPR.</label>
+
+              <button class="btn" type="submit" style="width:100%;margin-top:18px">Register meter</button>
+              <div class="msg" data-msg hidden role="status" aria-live="polite"></div>
+              <p class="note">Details go to our meter register and signup@enapoint.com</p>
+            </form>
+
+            <div class="card raised" data-register-done hidden tabindex="-1">
+              <div class="badge"><span class="dot"></span>Registration received</div>
+              <h2 style="margin-top:18px">Thank you</h2>
+              <p data-register-reply></p>
+              <div class="spec-row"><span class="k">Reference</span><span class="v mono" data-register-ref></span></div>
+              <div class="spec-row"><span class="k">Meter number</span><span class="v mono" data-register-meter></span></div>
+              <div class="flex" style="margin-top:20px"><a class="cta" href="/meter#topup">Buy units</a><a class="pill" href="/">Back to home</a></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
 ${eyebrow("Why register")}
-                <div style="margin-top:6px">${specs([
-                  ["Buy from anywhere", "Web or app, no vending office"],
-                  ["Credit goes to the device", "Not to a paper token you can lose"],
-                  ["Offline is handled", "Purchases queue for fourteen days"],
-                  ["Auto top-up", "Set a kWh floor and forget it"],
-                  ["One account", "Meters, roof, battery and chargers together"],
-                ])}</div>
-              </div>
+              <div style="margin-top:6px">${specs([
+                ["Buy from anywhere", "Web or app, no vending office"],
+                ["Credit goes to the device", "Not to a paper token you can lose"],
+                ["Offline is handled", "Purchases queue for fourteen days"],
+                ["Auto top-up", "Set a kWh floor and forget it"],
+                ["One account", "Meters, roof, battery and chargers together"],
+              ])}</div>
             </div>
-          </div>
-
-          <div data-step="2" hidden>
-            <div class="split">
-              <div>
-                <div class="badge"><span class="dot"></span>Device found on the grid</div>
-                <h2 style="margin-top:18px">Confirm the premises</h2>
-                <div class="card" data-confirm style="margin-bottom:20px"></div>
-                <form data-link-form class="card raised">
-                  <input type="hidden" name="meterNumber">
-                  <input type="hidden" name="disco">
-                  <input type="hidden" name="tariffBand">
-                  <input type="hidden" name="tariffKoboPerKwh">
-                  <div class="field"><label for="r-holder">Account holder</label><input id="r-holder" name="holderName" required placeholder="A. Okonkwo"></div>
-                  <div class="field"><label for="r-addr">Address</label><input id="r-addr" name="address" placeholder="12B Gado Nasko Way, Apo, Abuja"></div>
-                  <div class="field-row">
-                    <div class="field"><label for="r-phone">Phone for alerts</label><input id="r-phone" name="phone" placeholder="0803 000 0000"></div>
-                    <div class="field"><label for="r-floor">Auto top-up floor (kWh)</label><input id="r-floor" name="autoTopupFloorKwh" type="number" min="0" value="20"></div>
-                  </div>
-                  <div class="flex">
-                    <button class="btn ghost" type="button" data-back="1">Back</button>
-                    <button class="btn" type="submit">Link to my account</button>
-                  </div>
-                  <div class="msg" data-msg hidden></div>
-                </form>
-              </div>
-              <div class="card">
-                <h3>What linking does</h3>
-                <p class="small">It binds the device to your Enapoint account so credit can be pushed to it directly. It does not change your network operator, your tariff or any existing balance — those stay where they are.</p>
-              </div>
+            <div class="card" style="margin-top:20px">
+              <h3>What happens next</h3>
+${steps([
+                ["We check the details", "Your meter number, DisCo and tariff band are confirmed with the network."],
+                ["You get an email", "Confirmation goes to the address you entered, with your reference."],
+                ["Start buying units", "Top up on the web or in ENA Control. Credit goes straight to the meter."],
+              ])}
             </div>
-          </div>
-
-          <div data-step="3" hidden>
-            <div class="split">
-              <div>
-                <div class="badge"><span class="dot"></span>Meter linked &middot; grid monitoring on</div>
-                <h2 style="margin-top:18px">Load the first units</h2>
-                <p class="small">Linked meter: <b data-linked-summary class="mono"></b></p>
-                <form class="card raised" data-topup style="margin-top:18px">
-                  <input type="hidden" name="meterNumber">
-                  <div class="field-row">
-                    <div class="field"><label for="r-email">Email for the receipt</label><input id="r-email" name="email" type="email" required></div>
-                    <div class="field"><label for="r-phone2">Phone</label><input id="r-phone2" name="phone"></div>
-                  </div>
-                  <div class="field">
-                    <label for="r-amount">Amount (&#8358;)</label>
-                    <input id="r-amount" name="amount" type="number" min="100" step="50" value="5000" required>
-                    <div class="flex" style="margin-top:10px">
-                      <button class="chip" type="button" data-amount-chip="1000">&#8358;1,000</button>
-                      <button class="chip" type="button" data-amount-chip="2000">&#8358;2,000</button>
-                      <button class="chip on" type="button" data-amount-chip="5000">&#8358;5,000</button>
-                      <button class="chip" type="button" data-amount-chip="10000">&#8358;10,000</button>
-                    </div>
-                  </div>
-                  <div data-quote style="margin:18px 0"></div>
-                  <div class="flex">
-                    <button class="btn ghost" type="button" data-back="2">Back</button>
-                    <button class="btn" type="submit">Continue to payment</button>
-                  </div>
-                  <div class="msg" data-msg hidden></div>
-                  <p class="note">Credit queues and lands automatically if the meter is offline</p>
-                </form>
-              </div>
-              <div class="card">
-                <h3>You can skip this</h3>
-                <p class="small">The meter is already linked. Buying units now is convenience, not a requirement — you can top up any time from the web or the app.</p>
-                <a class="pill" href="/meter#topup">Top up later &rarr;</a>
-              </div>
+            <div class="card" style="margin-top:20px">
+              <h3>Need help?</h3>
+              <p class="small mb0">Email <a href="mailto:signup@enapoint.com">signup@enapoint.com</a> or call <a href="tel:+2348179189600">+234 817 918 9600</a>.</p>
             </div>
           </div>
         </div>`,
@@ -1337,7 +1452,7 @@ ${eyebrow("Why register")}
     section(
       `        <div class="card">
           <div class="between">
-            <div><h3 class="mb0">No smart meter yet?</h3><p class="small mb0">ENA supplies and installs single- and three-phase prepaid meters for mini-grids, estates and captive sites, and can register an existing device you already have.</p></div>
+            <div><h3 class="mb0">No smart meter yet?</h3><p class="small mb0">ENA supplies and installs single- and three-phase prepaid meters for mini-grids, estates and captive sites.</p></div>
             <a class="cta" href="/meter">See the meters</a>
           </div>
         </div>`,
@@ -1362,15 +1477,14 @@ ${eyebrow("Developer console")}
             <div class="field"><label for="pw">Console password</label><input id="pw" name="password" type="password" required autocomplete="current-password"></div>
             <button class="btn" type="submit" style="width:100%">Sign in</button>
             <div class="msg" data-msg hidden></div>
-            <p class="note">Set ENA_ADMIN_PASSWORD to replace the bootstrap password</p>
+            <p class="note">Enapoint staff only</p>
           </form>
-        </div>
-
-        <div data-app hidden>
-          <div class="msg" data-bootstrap-banner hidden>
-            No <b>ENA_ADMIN_PASSWORD</b> is set, so the console is using its bootstrap password. Set that environment variable in Netlify to lock it down.
+          <div class="card raised" style="max-width:420px" data-unconfigured hidden>
+            <div class="msg bad">This console is closed.</div>
+            <p class="small">No <b>ENA_ADMIN_PASSWORD</b> is configured for this project, so there is no password that can sign you in. Set that environment variable in Netlify &mdash; and <b>ENA_SESSION_SECRET</b> alongside it &mdash; then reload this page.</p>
           </div>
 
+        <div data-app hidden>
           <div class="between" style="margin-bottom:26px">
             <div>
 ${eyebrow("Developer console")}
@@ -1385,6 +1499,8 @@ ${eyebrow("Developer console")}
           <div class="console-layout">
             <nav class="console-nav" aria-label="Console sections">
               <button type="button" data-tab="overview" aria-selected="true">Overview</button>
+              <button type="button" data-tab="meters" aria-selected="false">Meter signups</button>
+              <button type="button" data-tab="enquiries" aria-selected="false">Enquiries</button>
               <button type="button" data-tab="products" aria-selected="false">Products</button>
               <button type="button" data-tab="updates" aria-selected="false">Product updates</button>
               <button type="button" data-tab="stock" aria-selected="false">Stock</button>
@@ -1410,6 +1526,20 @@ ${eyebrow("Developer console")}
                 <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Meter</th><th class="num">Amount</th><th class="num">Units</th><th>Status</th><th>Created</th></tr></thead><tbody data-recent-orders></tbody></table></div>
                 <h2 style="margin:34px 0 14px">Recent vending events</h2>
                 <div class="table-wrap"><table><thead><tr><th>Meter</th><th class="num">Units</th><th>Delivery</th><th>Created</th></tr></thead><tbody data-recent-vends></tbody></table></div>
+              </div>
+
+              <div class="panel" data-panel="meters" hidden>
+                <div class="between"><h2 class="mb0">Meter signups</h2>
+                  <select data-meter-filter style="width:auto"><option value="pending-verification">Pending verification</option><option value="verified">Verified</option><option value="rejected">Rejected</option><option value="">All meters</option></select>
+                </div>
+                <p class="small">Registrations from the website arrive here and in signup@enapoint.com. Check the details with the DisCo, then verify or reject.</p>
+                <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Meter</th><th>Holder</th><th>Network</th><th>Premises</th><th>Source</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead><tbody data-meter-list></tbody></table></div>
+              </div>
+
+              <div class="panel" data-panel="enquiries" hidden>
+                <h2>Enquiries</h2>
+                <p class="small">Contact-form messages and mini-grid design requests. Each one is also emailed to info@enapoint.com.</p>
+                <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Received</th><th>Topic</th><th>From</th><th>Message</th></tr></thead><tbody data-enquiry-list></tbody></table></div>
               </div>
 
               <div class="panel" data-panel="products" hidden>
@@ -1516,7 +1646,7 @@ ${eyebrow("Developer console")}
                     <div class="field"><label for="k-mode">Mode</label><select id="k-mode" name="mode"><option value="test">test</option><option value="live">live</option></select></div>
                   </div>
                   <label class="flex" style="text-transform:none;letter-spacing:0;font-family:inherit;font-size:13.5px;color:var(--body)">
-                    <input type="checkbox" name="write" style="width:auto"> Allow writes (create products, publish updates, upload stock)
+                    <input type="checkbox" name="write" style="width:auto"> Allow writes (register verified meters, settle vending, manage products and stock)
                   </label>
                   <button class="btn" type="submit" style="margin-top:16px">Generate key</button>
                   <div class="msg" data-msg hidden></div>
@@ -1551,19 +1681,24 @@ ${eyebrow("Payment")}
 
 page({
   slug: "pay/confirm",
-  title: "Confirm simulated payment — Enapoint",
-  description: "Simulation-mode checkout for Enapoint, used when no live payment provider is configured.",
+  title: "Order received — Enapoint",
+  description: "Your Enapoint order has been saved and our team will complete the payment with you.",
   body: section(
     `        <div data-payment-simulate style="max-width:560px;margin:0 auto">
-${eyebrow("Simulated checkout")}
-          <h1>Confirm this payment</h1>
-          <p class="lede">No live payment provider is configured, so the backend is running in simulation mode. Confirming here settles the order and issues the units exactly as a real provider callback would — no money moves.</p>
+${eyebrow("Order received")}
+          <h1>Your order is saved</h1>
+          <p class="lede">Online card payment is being switched on for this service. Your order is recorded under the reference below &mdash; our team will contact you to complete payment, or you can email <a href="mailto:info@enapoint.com">info@enapoint.com</a> quoting the reference.</p>
           <div class="card raised">
             <div class="spec-row"><span class="k">Reference</span><span class="v mono" data-reference></span></div>
-            <button class="btn" type="button" data-confirm-payment style="width:100%;margin-top:18px">Confirm payment</button>
+            <div class="spec-row"><span class="k">Contact</span><span class="v"><a href="mailto:info@enapoint.com">info@enapoint.com</a></span></div>
+            <details style="margin-top:18px">
+              <summary class="small" style="cursor:pointer">Enapoint staff</summary>
+              <button class="btn ghost" type="button" data-confirm-payment style="width:100%;margin-top:12px">Settle this order (operators only)</button>
+              <p class="small" style="margin-top:8px">Requires a signed-in console session.</p>
+            </details>
             <div class="msg" data-result hidden></div>
-            <p class="note">Set PAYSTACK_SECRET_KEY to use a live provider instead</p>
           </div>
+          <div class="flex" style="margin-top:22px"><a class="pill" href="/">Back to the home page</a><a class="pill" href="/contact">Contact us</a></div>
         </div>`,
   ),
 });

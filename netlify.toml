@@ -16,10 +16,13 @@
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(self), camera=(self)"
+    # Browsers only honour HSTS when it arrives over HTTPS, so this is inert until
+    # the certificate is live and then pins visitors to HTTPS for a year.
+    Strict-Transport-Security = "max-age=31536000"
     # Every page loads its scripts from /assets/js and its fonts from Google.
     # There is no inline JS anywhere; style-src needs 'unsafe-inline' only
     # because the markup uses style="" attributes for one-off layout nudges.
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
 
 [[headers]]
   for = "/assets/*"
@@ -37,15 +40,11 @@
   [headers.values]
     X-Robots-Tag = "noindex"
 
-# Canonicalise on the www host: every page's <link rel="canonical"> and og:url
-# already points at https://www.enapoint.com, so the bare apex must not serve a
-# duplicate copy of the site. Netlify adds this redirect itself once www is the
-# primary domain; keeping it here makes it explicit and survives a primary swap.
-[[redirects]]
-  from = "https://enapoint.com/*"
-  to = "https://www.enapoint.com/:splat"
-  status = 301
-  force = true
+# Canonical host is www.enapoint.com (every page's <link rel="canonical"> and
+# og:url point there). The apex -> www redirect is deliberately NOT forced here:
+# Netlify already redirects every domain alias to the primary domain, and a forced
+# rule that disagrees with the primary-domain setting creates a redirect loop the
+# moment HTTPS is live. Set www.enapoint.com as the primary domain in Netlify.
 
 [[redirects]]
   from = "/console"
@@ -59,5 +58,12 @@
 
 [[redirects]]
   from = "/docs"
-  to = "/dashboard#apis"
+  to = "/developers"
   status = 302
+
+# Partner tooling (Swagger UI, Postman, code generators) fetches the spec cross-origin.
+[[headers]]
+  for = "/openapi.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=300"

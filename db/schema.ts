@@ -93,12 +93,22 @@ export const meters = pgTable(
     tariffBand: text("tariff_band").notNull().default("C"),
     tariffKoboPerKwh: integer("tariff_kobo_per_kwh").notNull().default(28500),
     phone: text().notNull().default(""),
+    email: text().notNull().default(""),
+    meterType: text("meter_type").notNull().default("single-phase"),
+    state: text().notNull().default(""),
+    // "website" for self-service signups, "api:<key id>" for partner submissions.
+    source: text().notNull().default("website"),
+    verifiedAt: timestamp("verified_at"),
     autoTopupFloorKwh: integer("auto_topup_floor_kwh").notNull().default(20),
     status: text().notNull().default("linked"),
     balanceKwhMilli: integer("balance_kwh_milli").notNull().default(0),
     registeredAt: timestamp("registered_at").defaultNow(),
   },
-  (t) => [index("meters_imei_idx").on(t.imei), index("meters_rfid_idx").on(t.rfid)],
+  (t) => [
+    index("meters_imei_idx").on(t.imei),
+    index("meters_rfid_idx").on(t.rfid),
+    index("meters_status_idx").on(t.status),
+  ],
 );
 
 export const devices = pgTable("devices", {

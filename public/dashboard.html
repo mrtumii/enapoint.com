@@ -30,12 +30,13 @@
         <span>ENAPOINT</span>
       </a>
       <div class="header-actions">
-        <a class="pill" href="/dashboard">Console</a>
+        <a class="pill hide-sm" href="/register">Register a meter</a>
         <button class="icon-btn" data-theme-toggle type="button" aria-label="Switch theme">&#9728;</button>
         <a class="cta" href="/contact">Request a quote</a>
+        <button class="icon-btn nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu"><span aria-hidden="true"></span></button>
       </div>
     </div>
-    <nav class="site-nav" aria-label="Main">
+    <nav class="site-nav" id="site-nav" aria-label="Main">
         <a href="/">Home</a>
         <a href="/products">Products</a>
         <a href="/panels">Solar</a>
@@ -47,6 +48,7 @@
         <a href="/lab">Manufacturing</a>
         <a href="/refi">Impact</a>
         <a href="/app">ENA Control</a>
+        <a href="/developers">Partners &amp; API</a>
         <a href="/about">About</a>
         <a href="/support">Support</a>
         <a href="/contact">Contact</a>
@@ -64,16 +66,14 @@
             <div class="field"><label for="pw">Console password</label><input id="pw" name="password" type="password" required autocomplete="current-password"></div>
             <button class="btn" type="submit" style="width:100%">Sign in</button>
             <div class="msg" data-msg hidden></div>
-            <p class="note">The password is whatever ENA_ADMIN_PASSWORD is set to</p>
+            <p class="note">Enapoint staff only</p>
           </form>
           <div class="card raised" style="max-width:420px" data-unconfigured hidden>
             <div class="msg bad">This console is closed.</div>
             <p class="small">No <b>ENA_ADMIN_PASSWORD</b> is configured for this project, so there is no password that can sign you in. Set that environment variable in Netlify &mdash; and <b>ENA_SESSION_SECRET</b> alongside it &mdash; then reload this page.</p>
           </div>
-        </div>
 
         <div data-app hidden>
-
           <div class="between" style="margin-bottom:26px">
             <div>
         <p class="eyebrow">Developer console</p>
@@ -88,6 +88,8 @@
           <div class="console-layout">
             <nav class="console-nav" aria-label="Console sections">
               <button type="button" data-tab="overview" aria-selected="true">Overview</button>
+              <button type="button" data-tab="meters" aria-selected="false">Meter signups</button>
+              <button type="button" data-tab="enquiries" aria-selected="false">Enquiries</button>
               <button type="button" data-tab="products" aria-selected="false">Products</button>
               <button type="button" data-tab="updates" aria-selected="false">Product updates</button>
               <button type="button" data-tab="stock" aria-selected="false">Stock</button>
@@ -113,6 +115,20 @@
                 <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Meter</th><th class="num">Amount</th><th class="num">Units</th><th>Status</th><th>Created</th></tr></thead><tbody data-recent-orders></tbody></table></div>
                 <h2 style="margin:34px 0 14px">Recent vending events</h2>
                 <div class="table-wrap"><table><thead><tr><th>Meter</th><th class="num">Units</th><th>Delivery</th><th>Created</th></tr></thead><tbody data-recent-vends></tbody></table></div>
+              </div>
+
+              <div class="panel" data-panel="meters" hidden>
+                <div class="between"><h2 class="mb0">Meter signups</h2>
+                  <select data-meter-filter style="width:auto"><option value="pending-verification">Pending verification</option><option value="verified">Verified</option><option value="rejected">Rejected</option><option value="">All meters</option></select>
+                </div>
+                <p class="small">Registrations from the website arrive here and in signup@enapoint.com. Check the details with the DisCo, then verify or reject.</p>
+                <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Meter</th><th>Holder</th><th>Network</th><th>Premises</th><th>Source</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead><tbody data-meter-list></tbody></table></div>
+              </div>
+
+              <div class="panel" data-panel="enquiries" hidden>
+                <h2>Enquiries</h2>
+                <p class="small">Contact-form messages and mini-grid design requests. Each one is also emailed to info@enapoint.com.</p>
+                <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Received</th><th>Topic</th><th>From</th><th>Message</th></tr></thead><tbody data-enquiry-list></tbody></table></div>
               </div>
 
               <div class="panel" data-panel="products" hidden>
@@ -219,7 +235,7 @@
                     <div class="field"><label for="k-mode">Mode</label><select id="k-mode" name="mode"><option value="test">test</option><option value="live">live</option></select></div>
                   </div>
                   <label class="flex" style="text-transform:none;letter-spacing:0;font-family:inherit;font-size:13.5px;color:var(--body)">
-                    <input type="checkbox" name="write" style="width:auto"> Allow writes (create products, publish updates, upload stock)
+                    <input type="checkbox" name="write" style="width:auto"> Allow writes (register verified meters, settle vending, manage products and stock)
                   </label>
                   <button class="btn" type="submit" style="margin-top:16px">Generate key</button>
                   <div class="msg" data-msg hidden></div>
@@ -243,6 +259,7 @@
             <span>ENAPOINT</span>
           </a>
           <p class="small">Decentralised energy &mdash; solar, storage, power conversion and the software that reports on all three. Abuja, Nigeria &middot; Quincy, Massachusetts.</p>
+          <p class="small mb0"><a href="mailto:info@enapoint.com">info@enapoint.com</a><br><a href="tel:+2348179189600">+234 817 918 9600</a></p>
         </div>
         <div>
           <h4>Products</h4>
@@ -253,8 +270,8 @@
           <ul><li><a href="/about">About Enapoint</a></li><li><a href="/lab">Manufacturing</a></li><li><a href="/refi">Sustainability &amp; impact</a></li><li><a href="/contact">Contact</a></li></ul>
         </div>
         <div>
-          <h4>Developers</h4>
-          <ul><li><a href="/dashboard#apis">API reference</a></li><li><a href="/dashboard#keys">API keys</a></li><li><a href="/dashboard">Console</a></li><li><a href="/support">System status</a></li></ul>
+          <h4>Partners</h4>
+          <ul><li><a href="/developers">Partners &amp; API</a></li><li><a href="/developers#reference">API reference</a></li><li><a href="/dashboard">Staff console</a></li><li><a href="/support">System status</a></li></ul>
         </div>
         <div>
           <h4>Account</h4>
