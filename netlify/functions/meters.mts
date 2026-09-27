@@ -5,6 +5,7 @@ import { meters, vendTokens } from "../../db/schema.js";
 import { ok, fail, handler, readJson, requireFields, methodNotAllowed, HttpError } from "../lib/http.mjs";
 import { hasAdminSession, resolveApiKey, requireReadAccess, requireWriteAccess } from "../lib/auth.mjs";
 import { DEFAULT_TARIFF_KOBO_PER_KWH } from "../lib/money.mjs";
+import { throttle, looksLikeBot, stripBotFields } from "../lib/guard.mjs";
 
 export const DISCOS = ["AEDC", "BEDC", "EKEDC", "EEDC", "IBEDC", "IKEDC", "JED", "KAEDCO", "KEDCO", "PHED", "YEDC", "Aba Power", "Mini-grid / private"];
 const BANDS = ["A", "B", "C", "D", "E"];
@@ -78,6 +79,9 @@ export default handler(async (req, ctx) => {
   /* ------------------------------------------- is this meter already signed up? */
   if (path.endsWith("/verify")) {
     if (req.method !== "POST") return methodNotAllowed(["POST"]);
+    // Anonymous lookups are capped so the register cannot be scraped by walking
+    // through meter numbers. Partners with a key are not throttled here.
+    if (!(await resolveApiKey(req))) await throttle(req, ctx, "meter-verify", 20, 10 * 60);
     const body = await readJson(req);
     const identifier = str(body.meterNumber ?? body.imei ?? body.rfid ?? body.identifier, 40);
     if (!identifier) throw new HttpError("Provide a meter number, IMEI or RFID", 422);
@@ -93,14 +97,22 @@ export default handler(async (req, ctx) => {
   /* ------------------------------------------------------------- sign a meter up */
   if (path.endsWith("/register")) {
     if (req.method !== "POST") return methodNotAllowed(["POST"]);
-    const body = await readJson(req);
-    const values = registrationFrom(body);
 
     // Website signups wait for an operator to confirm them. A partner calling with a
     // write-scoped key (a DisCo, bank or agency that has already KYC'd the customer)
     // can register a meter as verified straight away.
     const key = await resolveApiKey(req);
     const partner = key && ((key.scopes as string[]) ?? []).includes("write") ? key : null;
+
+    // Public signups are limited per visitor and screened for bots; a bot gets a
+    // plausible reply and nothing is stored.
+    if (!partner) await throttle(req, ctx, "meter-register", 5, 60 * 60);
+    const raw = await readJson(req);
+    if (!partner && looksLikeBot(raw)) {
+      return ok({ registered: true, reply: "Thank you — your meter registration has been received." }, 202);
+    }
+    const body = stripBotFields(raw);
+    const values = registrationFrom(body);
 
     const existing = await findMeter(values.meterNumber);
     if (existing) {
@@ -191,4 +203,5 @@ export const config: Config = {
   // All four land in this function; the handler dispatches on the pathname, so the
   // literal routes are checked before the :number catch-all.
   path: ["/api/meters", "/api/meters/verify", "/api/meters/register", "/api/meters/:number", "/api/v1/meters", "/api/v1/meters/verify", "/api/v1/meters/register", "/api/v1/meters/:number"],
+  rateLimit: { windowLimit: 120, windowSize: 60, aggregateBy: ["ip", "domain"] },
 };

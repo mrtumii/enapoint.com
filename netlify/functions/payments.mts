@@ -4,6 +4,7 @@ import { db } from "../../db/index.js";
 import { orders, vendTokens } from "../../db/schema.js";
 import { ok, fail, handler, readJson, requireFields, methodNotAllowed, HttpError } from "../lib/http.mjs";
 import { requireReadAccess, requireWriteAccess } from "../lib/auth.mjs";
+import { throttle } from "../lib/guard.mjs";
 import {
   provider,
   newReference,
@@ -39,6 +40,8 @@ export default handler(async (req, ctx) => {
   /* --------------------------------------------------------------- initialize */
   if (path.endsWith("/initialize")) {
     if (req.method !== "POST") return methodNotAllowed(["POST"]);
+    // Caps how many checkouts one visitor can open, which blunts scripted order spam.
+    await throttle(req, ctx, "payment-init", 20, 10 * 60);
     const body = await readJson(req);
     requireFields(body, ["email"]);
     const amountKobo = amountFrom(body);
